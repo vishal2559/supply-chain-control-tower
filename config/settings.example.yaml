@@ -1,51 +1,339 @@
+# =============================================================================
+
 # config/settings.example.yaml
-# ================================================================
-# HOW TO USE THIS FILE:
-#   1. Copy this file and name the copy: settings.yaml
-#      (in the same config\ folder)
-#   2. Update the database path to match your machine
-#   3. Do not commit settings.yaml to Git — it is in .gitignore
+
+# Supply Chain Control Tower — Public Demo Configuration Template
+
+# =============================================================================
+
 #
-# On Windows use double backslashes: C:\\Users\\YourName\\...
-# On Mac/Linux use forward slashes:  /home/yourname/...
-# ================================================================
+
+# HOW TO USE THIS FILE:
+
+# 1. Copy this file and name the copy: settings.yaml
+
+# Keep it in the same config/ folder.
+
+#
+
+# 2. Update values locally as needed.
+
+#
+
+# 3. Do not commit your real settings.yaml to GitHub.
+
+# Your real settings.yaml may contain local paths, private settings,
+
+# machine-specific values, or environment-specific configuration.
+
+#
+
+# Example:
+
+# cp config/settings.example.yaml config/settings.yaml
+
+#
+
+# SECURITY:
+
+# Do not put API keys, passwords, access tokens, real customer data,
+
+# private project notes, or local machine secrets in this file.
+
+#
+
+# Store secrets in environment variables or a local .env file.
+
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+
+# DATABASE
+
+# -----------------------------------------------------------------------------
 
 database:
-  # Full path to your SQLite database file.
-  # The setup script creates this file automatically.
-  path: "C:\\Users\\YourName\\Documents\\supply-chain-control-tower\\data\\supply_chain.db"
 
-# ── DELAY THRESHOLDS ─────────────────────────────────────────────
-# Controls when orders change from DELAYED to NEED_ACTION status.
-# Default: orders overdue by more than 5 days become NEED_ACTION.
+# Public demo database path.
+
+# Replace locally if your database uses a different file name or location.
+
+#
+
+# Recommended public/demo value:
+
+# data/sample_supply_chain.db
+
+#
+
+# Local example:
+
+# data/supply_chain.db
+
+#
+
+# Windows absolute path example:
+
+# C:\Users\YourName\Documents\supply-chain-control-tower\data\supply_chain.db
+
+#
+
+# Mac/Linux absolute path example:
+
+# /home/yourname/supply-chain-control-tower/data/supply_chain.db
+
+path: "data/sample_supply_chain.db"
+
+# Set to true after running the index setup script.
+
+indexes_built: false
+
+# Safety limit for query size.
+
+max_rows_per_query: 10000
+
+# -----------------------------------------------------------------------------
+
+# DELAY THRESHOLDS
+
+# -----------------------------------------------------------------------------
+
 thresholds:
-  need_action_days: 5
-  delayed_days: 1
 
-# ── HOOKS (background scheduler) ─────────────────────────────────
-# Set enabled: false to disable a hook without deleting it.
-# Times are in UTC. India (IST) = UTC+5:30, so 8am IST = 2:30am UTC.
+# Controls when orders move into delayed or action-needed categories.
+
+delayed_days: 1
+need_action_days: 5
+
+# -----------------------------------------------------------------------------
+
+# PERFORMANCE
+
+# -----------------------------------------------------------------------------
+
+performance:
+
+# Cache settings
+
+cache_enabled: true
+cache_ttl_seconds: 300
+cache_max_rows: 50000
+
+# Token tracking settings
+
+token_tracking_enabled: true
+token_log_path: "logs/token_usage.json"
+token_alert_threshold: 2000
+token_chars_per_token: 4
+
+# Query timing settings
+
+slow_query_threshold_ms: 500
+perf_log_path: "logs/perf_log.json"
+
+# Maximum rows returned to Claude from list-style tools.
+
+max_response_rows: 100
+
+# -----------------------------------------------------------------------------
+
+# SECURITY
+
+# -----------------------------------------------------------------------------
+
+security:
+
+# Keep true for normal demo use.
+
+read_only_mode: true
+
+# Input and SQL safety controls.
+
+max_input_length: 100
+block_write_operations: true
+allowed_sql_operations:
+- "SELECT"
+
+# Audit logging.
+
+log_all_tool_calls: true
+audit_log_path: "logs/audit.log"
+
+# Basic rate limiting.
+
+max_calls_per_minute: 30
+rate_limit_window_seconds: 60
+
+# -----------------------------------------------------------------------------
+
+# NOTIFICATIONS
+
+# -----------------------------------------------------------------------------
+
+notifications:
+enabled: true
+
+# Public demo default: log only.
+
+# Local users may add desktop or email notifications if supported.
+
+channels:
+- "log"
+
+anomaly_log_path: "logs/anomaly.log"
+
+anomaly_thresholds:
+critical_orders_pct: 20
+unknown_rate_pct: 30
+new_freight_holds: 2
+inventory_stockouts: 1
+rapid_tool_calls_per_minute: 10
+token_spike_multiplier: 3
+slow_tool_call_ms: 500
+
+# -----------------------------------------------------------------------------
+
+# HOOKS / BACKGROUND SCHEDULER
+
+# -----------------------------------------------------------------------------
+
 hooks:
-  morning_briefing:
-    enabled: true
-    hour: 2
-    minute: 30
 
-  ci_scan:
-    enabled: true
-    interval_minutes: 60
+# Times are in UTC.
 
-  need_action_monitor:
-    enabled: true
-    interval_minutes: 30
+# Disable any hook by setting enabled: false.
 
-  agent_health_check:
-    enabled: true
-    interval_hours: 6
+morning_briefing:
+enabled: true
+hour: 2
+minute: 30
 
-# ── CI AGENT SETTINGS ────────────────────────────────────────────
+ci_scan:
+enabled: true
+interval_minutes: 60
+
+need_action_monitor:
+enabled: true
+interval_minutes: 30
+
+agent_health_check:
+enabled: true
+interval_hours: 6
+
+# -----------------------------------------------------------------------------
+
+# COORDINATOR
+
+# -----------------------------------------------------------------------------
+
+coordinator:
+enabled: true
+agent_timeout_seconds: 10
+max_agents_per_request: 5
+health_check_on_startup: true
+synthesis_mode: "summary"
+coordinator_log_path: "logs/coordinator.log"
+
+# -----------------------------------------------------------------------------
+
+# CI AGENT
+
+# -----------------------------------------------------------------------------
+
 ci_agent:
-  # Minimum confidence score for a recommendation to be shown (0.0 to 1.0)
-  min_confidence: 0.5
-  # How many days of history the CI agent analyses per scan
-  lookback_days: 30
+
+# Minimum confidence score for showing a recommendation.
+
+min_confidence: 0.5
+
+# Number of days of demo history to review per scan.
+
+lookback_days: 30
+
+# -----------------------------------------------------------------------------
+
+# TESTING
+
+# -----------------------------------------------------------------------------
+
+testing:
+enabled: true
+
+test_orders:
+- "SO10001"
+- "SO10002"
+- "SO10003"
+
+test_items:
+- "ITEM-001"
+- "ITEM-002"
+
+test_warehouses:
+- "WH-01"
+- "WH-02"
+
+report_path: "logs/test_results.json"
+log_path: "logs/test_results.log"
+fail_on_error: false
+min_pass_rate_pct: 90
+
+# -----------------------------------------------------------------------------
+
+# LLM PROVIDERS
+
+# -----------------------------------------------------------------------------
+
+llm_providers:
+primary:
+name: "claude-desktop"
+enabled: true
+
+# Optional fallback support.
+
+# Disabled by default in the public demo.
+
+# If enabled locally, store API keys in environment variables only.
+
+fallback:
+name: "openrouter"
+enabled: false
+base_url: "https://openrouter.ai/api/v1"
+model: "example-model-name"
+api_key_env_var: "OPENROUTER_API_KEY"
+max_tokens: 4096
+temperature: 0.1
+
+auto_fallback: false
+
+# -----------------------------------------------------------------------------
+
+# AGENTS
+
+# -----------------------------------------------------------------------------
+
+agents:
+shipping_delay_agent: true
+inventory_agent: true
+po_agent: true
+freight_agent: true
+warehouse_agent: true
+investigation_agent: true
+recommendation_agent: true
+ci_agent: true
+memory_agent: true
+performance_agent: true
+coordinator_agent: true
+test_agent: true
+
+# -----------------------------------------------------------------------------
+
+# LOGGING
+
+# -----------------------------------------------------------------------------
+
+logging:
+level: "INFO"
+console_output: true
+rotate_logs: true
+max_bytes: 1048576
+backup_count: 5
