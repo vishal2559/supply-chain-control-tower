@@ -1,0 +1,126 @@
+{
+  "_readme": "This file is the long-term memory for the Supply Chain Control Tower project. Claude reads it at the start of every session and updates it at the end. Do not edit manually unless you know what you are doing. Use memory_manager.py to make changes programmatically.",
+  "project": {
+    "name": "Supply Chain Control Tower",
+    "owner": "Vishal",
+    "version": "Phase 10",
+    "last_updated": "2026-05-31 01:31:26"
+  },
+  "phase_status": {
+    "phase_1_shipping_agent": "COMPLETE",
+    "phase_2_inventory_agent": "COMPLETE",
+    "phase_3_po_agent": "COMPLETE",
+    "phase_4_freight_warehouse": "COMPLETE",
+    "phase_5_investigation_agent": "COMPLETE",
+    "phase_6_recommendation_agent": "COMPLETE",
+    "phase_7_sqlite_upgrade": "COMPLETE",
+    "phase_8_streamlit_dashboard": "COMPLETE",
+    "phase_9_ci_agent": "COMPLETE",
+    "phase_10_step_1_claude_md": "COMPLETE",
+    "phase_10_step_2_settings": "COMPLETE",
+    "phase_10_step_3_slash_cmds": "COMPLETE",
+    "phase_10_step_4_memory": "COMPLETE",
+    "phase_10_step_5_hooks": "NOT_STARTED",
+    "phase_10_step_6_github": "NOT_STARTED",
+    "phase_10_step_7_coordinator": "NOT_STARTED",
+    "phase_10_step_8_plugins": "NOT_STARTED"
+  },
+  "last_ci_scan": {
+    "date": "",
+    "signals_detected": 0,
+    "recommendations_generated": 0,
+    "top_pattern": "",
+    "summary": "No scan has been run yet."
+  },
+  "last_briefing": {
+    "date": "",
+    "risk_level": "",
+    "total_orders": 0,
+    "delayed_count": 0,
+    "need_action_count": 0,
+    "top_root_cause": "",
+    "summary": "No briefing has been run yet."
+  },
+  "active_escalations": [
+    {
+      "sales_order_no": "SO10001",
+      "reason": "11 days overdue — UNKNOWN_NEEDS_REVIEW — auto-flagged by monitor",
+      "escalated_date": "2026-05-31"
+    },
+    {
+      "sales_order_no": "SO10002",
+      "reason": "21 days overdue — BACKORDER — auto-flagged by monitor",
+      "escalated_date": "2026-05-31"
+    },
+    {
+      "sales_order_no": "SO10003",
+      "reason": "26 days overdue — BACKORDER — auto-flagged by monitor",
+      "escalated_date": "2026-05-31"
+    },
+    {
+      "sales_order_no": "SO10004",
+      "reason": "23 days overdue — TRUCK_NOT_AVAILABLE — auto-flagged by monitor",
+      "escalated_date": "2026-05-31"
+    },
+    {
+      "sales_order_no": "SO10005",
+      "reason": "22 days overdue — CARRIER_DELAY — auto-flagged by monitor",
+      "escalated_date": "2026-05-31"
+    },
+    {
+      "sales_order_no": "SO10006",
+      "reason": "24 days overdue — WAREHOUSE_PICK_DELAY — auto-flagged by monitor",
+      "escalated_date": "2026-05-31"
+    },
+    {
+      "sales_order_no": "SO10007",
+      "reason": "25 days overdue — FREIGHT_HOLD — auto-flagged by monitor",
+      "escalated_date": "2026-05-31"
+    },
+    {
+      "sales_order_no": "SO10008",
+      "reason": "28 days overdue — UNKNOWN_NEEDS_REVIEW — auto-flagged by monitor",
+      "escalated_date": "2026-05-31"
+    }
+  ],
+  "key_decisions": [
+    {
+      "date": "2026-05-31 01:09",
+      "decision": "Self-test: Memory manager verified working."
+    },
+    {
+      "date": "2026-05-31 01:12",
+      "decision": "Self-test: Memory manager verified working."
+    },
+    {
+      "date": "2026-05-31 01:19",
+      "decision": "Memory MCP server was built and connected on Phase 10 Step 4."
+    },
+    {
+      "date": "2026-05-31 01:20",
+      "decision": "Self-test: Memory manager verified working."
+    },
+    {
+      "date": "2026-05-31 01:31",
+      "decision": "Self-test: Memory manager verified working."
+    }
+  ],
+  "session_summaries": [],
+  "agent_health": {
+    "shipping_delay_agent": "HEALTHY",
+    "inventory_agent": "HEALTHY",
+    "po_agent": "HEALTHY",
+    "freight_agent": "HEALTHY",
+    "warehouse_agent": "HEALTHY",
+    "investigation_agent": "HEALTHY",
+    "recommendation_agent": "HEALTHY",
+    "ci_agent": "HEALTHY",
+    "memory_agent": "HEALTHY"
+  },
+  "notes": [
+    {
+      "date": "2026-05-31",
+      "note": "Test note: Memory system was built and verified on Phase 10 Step 4."
+    }
+  ]
+}

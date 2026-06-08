@@ -1,294 +1,332 @@
-# CONTINUOUS IMPROVEMENT AGENT — COMPLETE INSTALLATION GUIDE
-# Supply Chain Control Tower — Phase 9
-# =======================================================================
+# Installation Guide — Supply Chain Control Tower
+# Version: 3.0
+# Last updated: June 2026
+# ================================================================
 
-## WHAT YOU JUST BUILT
+## Prerequisites
 
-The Continuous Improvement (CI) Agent is a self-learning, always-on
-improvement analyst embedded inside your Supply Chain Control Tower.
+Before you begin, make sure you have the following installed:
 
-It works like a full-time analyst who:
-  1. Scans all your data every time you run it
-  2. Finds patterns, anomalies, and systemic problems
-  3. Generates specific, actionable recommendations
-  4. Asks you to approve or reject each recommendation
-  5. Learns from every decision you make
-  6. Gets smarter over time
+| Tool | Version | Download |
+|------|---------|----------|
+| Python | 3.10 | python.org/downloads |
+| Claude Desktop | Latest | claude.ai/download |
+| Git | Any | git-scm.com/download/win |
+| VS Code | Any | code.visualstudio.com |
 
-It does NOT make autonomous changes. You are always in control.
+---
 
+## Step 1 — Clone the Repository
 
-## FILES CREATED — WHERE THEY GO
+Open PowerShell and run:
 
-Copy each file to the exact path shown:
+```powershell
+cd "C:\Users\YOUR_USERNAME\Documents"
+git clone https://github.com/vishal2559/supply-chain-control-tower.git
+cd supply-chain-control-tower
+```
 
-  SOURCE (this delivery)               → DESTINATION (your project)
-  ─────────────────────────────────────────────────────────────────
-  scripts/setup_ci_database.py         → scripts\setup_ci_database.py
-  config/ci_project_config.py          → config\ci_project_config.py
-  src/supply_chain/ci_signal_detector.py       → src\supply_chain\ci_signal_detector.py
-  src/supply_chain/ci_recommendation_generator.py → src\supply_chain\ci_recommendation_generator.py
-  src/supply_chain/ci_learning_engine.py       → src\supply_chain\ci_learning_engine.py
-  mcp_server/ci_mcp_server.py          → mcp_server\ci_mcp_server.py
-  dashboard/ci_dashboard_tab.py        → dashboard\ci_dashboard_tab.py
+Replace `YOUR_USERNAME` with your Windows username.
 
+---
 
-## STEP 1 — CREATE THE DATABASE TABLES
+## Step 2 — Install Python Dependencies
 
-Run this ONCE to add the 7 new CI tables to your existing database:
+```powershell
+pip install -r requirements.txt
+```
 
-  cd "C:\Users\preet\Documents\AI Work\supply_chain_mcp_project"
-  $env:PYTHONPATH = "C:\Users\preet\Documents\AI Work\supply_chain_mcp_project\src"
-  python scripts\setup_ci_database.py
+This installs all required packages including:
+- `mcp` — Model Context Protocol SDK
+- `fastmcp` — FastMCP server framework
+- `pyyaml` — reads config/settings.yaml
+- `requests` — used by OpenRouter fallback scripts
+- `python-dotenv` — reads .env file for API keys
+- `streamlit` — dashboard
+- `plotly` — charts in dashboard
 
-Expected output:
-  Connecting to database: ...supply_chain.db
-  Creating CI Agent tables...
-    ✓ ci_signals
-    ✓ ci_recommendations
-    ✓ ci_approval_requests
-    ✓ ci_action_items
-    ✓ ci_outcomes
-    ✓ ci_lessons
-    ✓ ci_agent_run_log
-  ✅ All CI Agent tables created successfully.
+---
 
-If you see this, the database is ready.
+## Step 3 — Set Up the Database
 
+```powershell
+# Load sample data into SQLite
+python scripts/csv_to_sqlite.py
 
-## STEP 2 — TEST THE MCP SERVER
+# Build performance indexes
+python scripts/build_indexes.py
+```
 
-Run the CI Agent MCP server directly to check for errors:
+This creates `data/supply_chain.db` with all sample data loaded
+and 24 indexes built for fast queries.
 
-  cd "C:\Users\preet\Documents\AI Work\supply_chain_mcp_project"
-  $env:PYTHONPATH = "C:\Users\preet\Documents\AI Work\supply_chain_mcp_project\src"
-  python mcp_server\ci_mcp_server.py
+---
 
-Expected: cursor blinks silently (no output = good)
-Press Ctrl+C to stop.
+## Step 4 — Configure Claude Desktop
 
-If you see an ImportError, check that:
-  - PYTHONPATH is set correctly
-  - All 3 src files were copied to src\supply_chain\
+### 4a — Find the config file
 
+Open PowerShell and run:
 
-## STEP 3 — ADD TO CLAUDE DESKTOP
+```powershell
+notepad "$env:LOCALAPPDATA\Packages\Claude_pzs8sxrjxfjjc\LocalCache\Roaming\Claude\claude_desktop_config.json"
+```
 
-Open your Claude Desktop config file:
-  C:\Users\preet\AppData\Roaming\Claude\claude_desktop_config.json
+### 4b — Add all 12 MCP servers
 
-Add the CI agent entry inside the "mcpServers" section:
+Replace the entire contents with the config below.
+Update the paths to match your machine:
 
-  "ci-agent": {
-    "command": "C:\\Users\\preet\\AppData\\Local\\Programs\\Python\\Python310\\python.exe",
-    "args": [
-      "C:\\Users\\preet\\Documents\\AI Work\\supply_chain_mcp_project\\mcp_server\\ci_mcp_server.py"
-    ],
-    "env": {
-      "PYTHONPATH": "C:\\Users\\preet\\Documents\\AI Work\\supply_chain_mcp_project\\src"
+```json
+{
+  "mcpServers": {
+    "shipping-delay-agent": {
+      "command": "C:\\Users\\YOUR_USERNAME\\AppData\\Local\\Programs\\Python\\Python310\\python.exe",
+      "args": ["mcp_server\\shipping_mcp_server.py"],
+      "cwd": "C:\\Users\\YOUR_USERNAME\\Documents\\supply-chain-control-tower",
+      "env": {
+        "PYTHONPATH": "C:\\Users\\YOUR_USERNAME\\Documents\\supply-chain-control-tower\\src"
+      }
+    },
+    "inventory-agent": {
+      "command": "C:\\Users\\YOUR_USERNAME\\AppData\\Local\\Programs\\Python\\Python310\\python.exe",
+      "args": ["mcp_server\\inventory_mcp_server.py"],
+      "cwd": "C:\\Users\\YOUR_USERNAME\\Documents\\supply-chain-control-tower",
+      "env": {
+        "PYTHONPATH": "C:\\Users\\YOUR_USERNAME\\Documents\\supply-chain-control-tower\\src"
+      }
+    },
+    "po-agent": {
+      "command": "C:\\Users\\YOUR_USERNAME\\AppData\\Local\\Programs\\Python\\Python310\\python.exe",
+      "args": ["mcp_server\\po_mcp_server.py"],
+      "cwd": "C:\\Users\\YOUR_USERNAME\\Documents\\supply-chain-control-tower",
+      "env": {
+        "PYTHONPATH": "C:\\Users\\YOUR_USERNAME\\Documents\\supply-chain-control-tower\\src"
+      }
+    },
+    "freight-agent": {
+      "command": "C:\\Users\\YOUR_USERNAME\\AppData\\Local\\Programs\\Python\\Python310\\python.exe",
+      "args": ["mcp_server\\freight_mcp_server.py"],
+      "cwd": "C:\\Users\\YOUR_USERNAME\\Documents\\supply-chain-control-tower",
+      "env": {
+        "PYTHONPATH": "C:\\Users\\YOUR_USERNAME\\Documents\\supply-chain-control-tower\\src"
+      }
+    },
+    "warehouse-agent": {
+      "command": "C:\\Users\\YOUR_USERNAME\\AppData\\Local\\Programs\\Python\\Python310\\python.exe",
+      "args": ["mcp_server\\warehouse_mcp_server.py"],
+      "cwd": "C:\\Users\\YOUR_USERNAME\\Documents\\supply-chain-control-tower",
+      "env": {
+        "PYTHONPATH": "C:\\Users\\YOUR_USERNAME\\Documents\\supply-chain-control-tower\\src"
+      }
+    },
+    "investigation-agent": {
+      "command": "C:\\Users\\YOUR_USERNAME\\AppData\\Local\\Programs\\Python\\Python310\\python.exe",
+      "args": ["mcp_server\\investigation_mcp_server.py"],
+      "cwd": "C:\\Users\\YOUR_USERNAME\\Documents\\supply-chain-control-tower",
+      "env": {
+        "PYTHONPATH": "C:\\Users\\YOUR_USERNAME\\Documents\\supply-chain-control-tower\\src"
+      }
+    },
+    "recommendation-agent": {
+      "command": "C:\\Users\\YOUR_USERNAME\\AppData\\Local\\Programs\\Python\\Python310\\python.exe",
+      "args": ["mcp_server\\recommendation_mcp_server.py"],
+      "cwd": "C:\\Users\\YOUR_USERNAME\\Documents\\supply-chain-control-tower",
+      "env": {
+        "PYTHONPATH": "C:\\Users\\YOUR_USERNAME\\Documents\\supply-chain-control-tower\\src"
+      }
+    },
+    "ci-agent": {
+      "command": "C:\\Users\\YOUR_USERNAME\\AppData\\Local\\Programs\\Python\\Python310\\python.exe",
+      "args": ["mcp_server\\ci_mcp_server.py"],
+      "cwd": "C:\\Users\\YOUR_USERNAME\\Documents\\supply-chain-control-tower",
+      "env": {
+        "PYTHONPATH": "C:\\Users\\YOUR_USERNAME\\Documents\\supply-chain-control-tower\\src"
+      }
+    },
+    "memory-agent": {
+      "command": "C:\\Users\\YOUR_USERNAME\\AppData\\Local\\Programs\\Python\\Python310\\python.exe",
+      "args": ["mcp_server\\memory_mcp_server.py"],
+      "cwd": "C:\\Users\\YOUR_USERNAME\\Documents\\supply-chain-control-tower",
+      "env": {
+        "PYTHONPATH": "C:\\Users\\YOUR_USERNAME\\Documents\\supply-chain-control-tower\\src"
+      }
+    },
+    "performance-agent": {
+      "command": "C:\\Users\\YOUR_USERNAME\\AppData\\Local\\Programs\\Python\\Python310\\python.exe",
+      "args": ["mcp_server\\performance_mcp_server.py"],
+      "cwd": "C:\\Users\\YOUR_USERNAME\\Documents\\supply-chain-control-tower",
+      "env": {
+        "PYTHONPATH": "C:\\Users\\YOUR_USERNAME\\Documents\\supply-chain-control-tower\\src"
+      }
+    },
+    "coordinator-agent": {
+      "command": "C:\\Users\\YOUR_USERNAME\\AppData\\Local\\Programs\\Python\\Python310\\python.exe",
+      "args": ["mcp_server\\coordinator_mcp_server.py"],
+      "cwd": "C:\\Users\\YOUR_USERNAME\\Documents\\supply-chain-control-tower",
+      "env": {
+        "PYTHONPATH": "C:\\Users\\YOUR_USERNAME\\Documents\\supply-chain-control-tower\\src"
+      }
+    },
+    "test-agent": {
+      "command": "C:\\Users\\YOUR_USERNAME\\AppData\\Local\\Programs\\Python\\Python310\\python.exe",
+      "args": ["mcp_server\\test_mcp_server.py"],
+      "cwd": "C:\\Users\\YOUR_USERNAME\\Documents\\supply-chain-control-tower",
+      "env": {
+        "PYTHONPATH": "C:\\Users\\YOUR_USERNAME\\Documents\\supply-chain-control-tower\\src"
+      }
     }
   }
+}
+```
 
-Save the file and restart Claude Desktop completely.
+### 4c — Validate the config before restarting
 
-To verify it's connected: open Claude Desktop and type:
-  "Run the improvement scan"
+```powershell
+python -c "import json; json.load(open(r'$env:LOCALAPPDATA\Packages\Claude_pzs8sxrjxfjjc\LocalCache\Roaming\Claude\claude_desktop_config.json')); print('JSON OK')"
+```
 
-Claude should call the run_improvement_scan tool and return results.
+### 4d — Restart Claude Desktop
 
+Close Claude Desktop completely and reopen it.
+All 12 agents should appear as connected in the tools panel.
 
-## STEP 4 — ADD TO STREAMLIT DASHBOARD
+---
 
-In dashboard\app.py, find where you define your tabs.
-Add these two changes:
+## Step 5 — OpenRouter Fallback Setup (Optional)
 
-CHANGE 1 — Add the import at the top of app.py:
+This gives you a free fallback chat when Claude Desktop hits its
+usage limit. No money required — free models are available.
 
-  from ci_dashboard_tab import render_ci_tab
+### 5a — Create an OpenRouter account
 
-CHANGE 2 — Add a new tab wherever you define your tabs:
+Go to openrouter.ai and create a free account.
 
-  # Before (example — your tabs may be named differently):
-  tab1, tab2, tab3 = st.tabs(["Command Center", "Domains", "Investigation"])
+### 5b — Get your API key
 
-  # After:
-  tab1, tab2, tab3, tab_ci = st.tabs([
-      "Command Center", "Domains", "Investigation", "🔄 Improvements"
-  ])
+- Click your profile icon → Keys
+- Click Create Key
+- Name it: supply-chain-control-tower
+- Copy the key (starts with sk-or-v1-...)
 
-  # And add this at the bottom:
-  with tab_ci:
-      render_ci_tab()
+### 5c — Create the .env file
 
-Run the dashboard:
-  streamlit run dashboard\app.py --server.port 8502
+Run this in PowerShell from the project root:
 
+```powershell
+python -c "
+key = input('Paste your OpenRouter API key: ')
+with open('.env', 'w', encoding='utf-8') as f:
+    f.write(f'OPENROUTER_API_KEY={key}')
+print('Saved.')
+"
+```
 
-## HOW TO USE THE CI AGENT IN CLAUDE DESKTOP
+This creates the .env file with correct encoding (no BOM).
 
-Once connected, here are the exact phrases to use:
+### 5d — Verify it works
 
-ACTION                        WHAT TO SAY
-──────────────────────────────────────────────────────────────────
-Run a scan                   "Run the improvement scan"
-See pending recommendations  "Show me the pending recommendations"
-Approve a recommendation     "Approve recommendation CI-XXXXXX"
-Reject a recommendation      "Reject CI-XXXXXX because [reason]"
-Log what happened            "Log the outcome for CI-XXXXXX — it worked.
-                              Before: 3 carrier delays. After: 0."
-See the summary              "Give me the improvement summary"
-See lessons learned          "Show me the lessons learned"
-Weekly report                "Give me the weekly CI report"
+```powershell
+python scripts/check_balance.py
+```
 
+You should see your account type and usage. No errors means
+your API key is working correctly.
 
-## THE 7 DATABASE TABLES — WHAT THEY STORE
+### 5e — Start the fallback chat
 
-TABLE                  PURPOSE
-──────────────────────────────────────────────────────────────────
-ci_signals             Raw observations the agent collects each scan
-ci_recommendations     Improvement suggestions with all supporting data
-ci_approval_requests   Items waiting for your approve/reject decision
-ci_action_items        Concrete work items created after you approve
-ci_outcomes            Results after an action was implemented
-ci_lessons             The agent's growing memory of what it has learned
-ci_agent_run_log       Audit trail of every time the agent ran
+```powershell
+python scripts/fallback_chat.py
+```
 
-You can view all of these in DB Browser for SQLite.
-Open: data\supply_chain.db → Browse Data → select any ci_ table.
+Type `models` to see the free model chain.
+Type `help` for all available commands.
+Type `quit` to exit.
 
+---
 
-## THE 8 DETECTION PATTERNS
+## Step 6 — Launch the Streamlit Dashboard (Optional)
 
-The agent currently detects these 8 types of problems:
+```powershell
+streamlit run dashboard/app.py
+```
 
-1. REPEATED_DELAY_BY_CARRIER
-   Carrier delay reason code appearing across multiple orders
+Opens at http://localhost:8501 in your browser.
 
-2. DOMINANT_ROOT_CAUSE
-   One root cause type in more than 35% of all delays
+---
 
-3. HIGH_UNKNOWN_RATE
-   More than 20% of delays classified as UNKNOWN_NEEDS_REVIEW
+## Verification Checklist
 
-4. FREIGHT_HOLD_PATTERN
-   2 or more simultaneous active freight holds
+Run these checks after installation:
 
-5. WEAK_CARRIER_OVERUSE
-   More than 30% of active shipments using WEAK/CRITICAL carriers
+```powershell
+# 1. Database exists and has data
+python -c "
+import sqlite3
+conn = sqlite3.connect('data/supply_chain.db')
+tables = conn.execute(\"SELECT name FROM sqlite_master WHERE type='table'\").fetchall()
+print('Tables:', [t[0] for t in tables])
+"
 
-6. WAREHOUSE_SYSTEMIC_DELAY
-   2 or more delayed picks in the same warehouse
+# 2. Settings load correctly
+python -c "
+import sys; sys.path.insert(0, 'src')
+from config.settings_loader import get_setting
+print('DB path:', get_setting('database.path'))
+print('Settings OK')
+"
 
-7. REPEATED_STOCKOUT
-   2 or more inventory items at zero or on backorder
+# 3. OpenRouter API key works (if configured)
+python scripts/check_balance.py
+```
 
-8. DATA_QUALITY_GAP
-   Missing critical fields across shipment, freight, or warehouse records
+---
 
-To add more detectors, add a new function to ci_signal_detector.py
-following the same pattern as the existing ones.
+## Troubleshooting
 
+**All agents disconnect when Claude Desktop restarts**
+→ JSON syntax error in config file. Run the validation command
+  in Step 4c before restarting.
 
-## APPROVAL RULES — WHAT REQUIRES YOUR DECISION
+**Import errors in MCP servers**
+→ PYTHONPATH not set correctly in config. Verify it points to
+  the src\ folder, not the project root.
 
-The agent will ALWAYS ask before:
-  - Any change to business rules or scoring thresholds
-  - Code changes (rules.py, recommendation_engine.py, etc.)
-  - Workflow changes (who gets notified, when, how)
-  - Carrier routing decisions (affects contracts and costs)
-  - Inventory reorder point changes (affects purchasing budget)
-  - Any action involving customer communication
+**UnicodeDecodeError when running scripts**
+→ Missing encoding="utf-8" on file open. This is a Windows issue.
+  All project files already include this — check any custom scripts.
 
-The agent can auto-log (no approval needed):
-  - Pattern observations with high confidence
-  - Data quality gap reports
-  - Warehouse delay pattern detection
-  - Carrier repeat delay observations
+**dotenv not loading .env file**
+→ .env file was created with BOM encoding. Recreate it using
+  the Python command in Step 5c above.
 
+**Free models rate limited in fallback chat**
+→ Normal during peak hours. Wait a few minutes and try again.
+  Type 'paid' in the chat to force the paid model.
+  Or add $5 credits at openrouter.ai/credits.
 
-## HOW LEARNING WORKS
+**Module not found: supply_chain**
+→ Duplicate supply_chain folder at project root. Delete it.
+  The correct location is src\supply_chain\ only.
 
-The agent learns in 3 ways:
+---
 
-WAY 1 — From rejections:
-  When you reject a recommendation with a reason, the agent saves:
-  "Recommendation [type X] was rejected because [your reason].
-   Avoid similar recommendations without addressing this concern."
+## File Reference
 
-WAY 2 — From successful outcomes:
-  When you log a "implemented" outcome, the agent saves:
-  "Recommendation [type X] was successfully implemented.
-   Before: [metric]. After: [metric]."
+| File | Purpose |
+|------|---------|
+| config/settings.yaml | All project settings — edit here, not in code |
+| data/supply_chain.db | SQLite database — all live data |
+| .env | API keys — never commit to GitHub |
+| logs/audit.log | Every tool call recorded |
+| logs/test_results.json | Latest automated test results |
+| logs/balance_log.json | OpenRouter balance history |
 
-WAY 3 — From failed outcomes:
-  When you log a "failed" outcome, the agent saves:
-  "Recommendation [type X] was attempted but did not achieve expected results.
-   Future recommendations of this type need closer review."
+---
 
-All lessons are stored in ci_lessons and visible in the dashboard.
-Over time, lessons allow the agent to calibrate its confidence scores.
+## Getting Help
 
-
-## TUNING THE AGENT
-
-All thresholds are in config\ci_project_config.py.
-Change these to match your operation:
-
-  # How many carrier delays before flagging a pattern?
-  "carrier_delay_repeat_threshold": 2  ← change to 3 if your data is larger
-
-  # At what % of delays is UNKNOWN rate a problem?
-  "unknown_root_cause_pct_threshold": 0.20  ← change to 0.15 to be stricter
-
-  # At what % do we flag weak carrier overuse?
-  In detect_weak_carrier_usage(): weak_pct >= 0.30 ← change the 0.30
-
-No other file needs to change. Configuration is centralised.
-
-
-## ADDING THIS TO A DIFFERENT PROJECT
-
-To reuse this agent on a completely different project:
-
-1. Copy all 7 files to the new project.
-2. Edit config\ci_project_config.py:
-   - Change project_name, project_domain, business_goals
-   - Update teams, data_sources, scoring_weights
-3. Edit ci_signal_detector.py:
-   - Replace the detector functions with ones that match your data structure
-   - Keep the _make_signal() helper — it works for any project
-4. Update DB_PATH in ci_signal_detector.py and ci_learning_engine.py.
-5. Run setup_ci_database.py in the new project.
-6. Add ci_mcp_server.py to Claude Desktop config.
-
-The recommendation templates, approval rules, learning engine,
-and dashboard are completely reusable without modification.
-
-
-## TERMINAL TEST CHECKLIST
-
-After copying all files, run these checks in order:
-
-  □ Step 1: python scripts\setup_ci_database.py
-    Expected: "✅ All CI Agent tables created successfully."
-
-  □ Step 2: python mcp_server\ci_mcp_server.py
-    Expected: cursor blinks silently, no errors
-
-  □ Step 3: Restart Claude Desktop and ask:
-    "Run the improvement scan"
-    Expected: Claude calls run_improvement_scan and returns results
-
-  □ Step 4: Ask Claude:
-    "Show me the pending recommendations"
-    Expected: list of recommendations with IDs like CI-XXXXXX
-
-  □ Step 5: Ask Claude:
-    "Reject recommendation CI-XXXXXX because it doesn't apply to our operation"
-    Expected: Claude confirms rejection and says a lesson was saved
-
-  □ Step 6: streamlit run dashboard\app.py --server.port 8502
-    Go to http://localhost:8502 → "🔄 Improvements" tab
-    Expected: KPI cards, scan button, recommendations list
-
-All 6 checks passing = CI Agent fully operational.
+- Read CLAUDE.md for project rules and coding conventions
+- Paste PROJECT_CONTEXT_FOR_NEW_CHAT.md into a new Claude chat
+  to instantly restore full project context
+- GitHub Issues: github.com/vishal2559/supply-chain-control-tower/issues

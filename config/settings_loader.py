@@ -1,398 +1,295 @@
-# =============================================================================
-# config\settings_loader.py
-# Supply Chain Control Tower — Settings Loader
+# config/settings_loader.py
+# Supply Chain Control Tower — Central Settings Loader
 # =============================================================================
 #
 # PURPOSE:
-#   This file reads config\settings.yaml and makes its values available
-#   to every MCP server in the project.
+#   This file reads config/settings.yaml and provides helper functions
+#   that every MCP server and module uses to get configuration values.
 #
-#   The MCP servers do NOT read the YAML file directly. They call this
-#   loader instead, which handles all the file-reading logic in one place.
+# WHY THIS EXISTS:
+#   Without this file, every Python file would need to open and parse
+#   settings.yaml itself. That means 12 files all doing the same work.
+#   This file does it once and all others just call get_setting().
 #
-# HOW IT WORKS:
-#   1. This file finds the settings.yaml relative to the project root.
-#   2. It reads and parses the YAML into a Python dictionary.
-#   3. It exposes two things:
-#        - get_settings()  → returns the full settings dictionary
-#        - get_data_path() → returns a fully resolved file path for a named CSV
+# HOW TO USE IN ANY PYTHON FILE:
+#   from config.settings_loader import get_setting, get_database_path
 #
-# HOW TO USE IN AN MCP SERVER:
-#   Replace this:
-#     DATA_FILE = r"C:\Users\preet\...\shipments_sample.csv"
+#   # Get any value from settings.yaml using dot notation:
+#   ttl = get_setting("performance.cache_ttl_seconds")   # returns 300
+#   path = get_setting("database.path")                  # returns "data/supply_chain.db"
 #
-#   With this:
-#     from config.settings_loader import get_data_path
-#     DATA_FILE = get_data_path("shipments")
-#
-#   That's the entire change needed per server. One import, one line.
-#
-# DEPENDENCIES:
-#   PyYAML — install with: pip install pyyaml
-#   This is the standard Python library for reading YAML files.
+#   # Convenience helpers for the most common lookups:
+#   db_path = get_database_path()
+#   max_rows = get_max_response_rows()
 #
 # =============================================================================
 
-import os       # os gives us tools for working with file paths and directories
-import yaml     # yaml lets us read .yaml files into Python dictionaries
+import os
+import yaml
 
-
-# =============================================================================
-# STEP 1: FIND THE PROJECT ROOT
-# =============================================================================
+# ─── Find the project root ────────────────────────────────────────────────────
 #
-# We need to know WHERE the project folder is so we can find settings.yaml.
+# This file lives at: project_root/config/settings_loader.py
+# os.path.abspath(__file__)          → full path to this file
+# os.path.dirname(...)               → the config/ folder
+# os.path.dirname(... again ...)     → the project root folder
 #
-# __file__ is a special Python variable that holds the full path to THIS file.
-# So if this file is at:
-#   C:\...\supply_chain_mcp_project\config\settings_loader.py
-# Then __file__ = "C:\...\supply_chain_mcp_project\config\settings_loader.py"
+# We need the project root so we can build absolute paths to settings.yaml
+# and to the database file, regardless of where Python is run from.
+
+_THIS_FILE   = os.path.abspath(__file__)
+_CONFIG_DIR  = os.path.dirname(_THIS_FILE)
+_PROJECT_ROOT = os.path.dirname(_CONFIG_DIR)
+
+# Full path to settings.yaml
+_SETTINGS_PATH = os.path.join(_CONFIG_DIR, "settings.yaml")
+
+
+# ─── Load settings once at import time ───────────────────────────────────────
 #
-# os.path.dirname(__file__) strips the filename and gives us the folder:
-#   "C:\...\supply_chain_mcp_project\config"
-#
-# os.path.dirname(...) again goes one level up to the project root:
-#   "C:\...\supply_chain_mcp_project"
-#
-# os.path.abspath() converts it to an absolute path, resolving any ".." parts.
-# This makes the path reliable regardless of where Python was launched from.
+# We load the YAML file once when this module is first imported.
+# All subsequent calls to get_setting() read from this in-memory dict.
+# This avoids reading the file from disk on every tool call.
 
-_THIS_FILE_FOLDER = os.path.dirname(os.path.abspath(__file__))
-# _THIS_FILE_FOLDER is now: ...\supply_chain_mcp_project\config
-
-PROJECT_ROOT = os.path.dirname(_THIS_FILE_FOLDER)
-# PROJECT_ROOT is now: ...\supply_chain_mcp_project
-
-# The full path to settings.yaml, built by joining the config folder + filename.
-SETTINGS_FILE = os.path.join(_THIS_FILE_FOLDER, "settings.yaml")
-
-
-# =============================================================================
-# STEP 2: CACHE — ONLY READ THE FILE ONCE
-# =============================================================================
-#
-# Reading a file from disk every single time a tool is called would be slow
-# and wasteful. Instead, we use a "cache" pattern:
-#
-#   _settings_cache starts as None (meaning "not loaded yet").
-#   The first time get_settings() is called, we read the file and store
-#   the result in _settings_cache.
-#   Every call after that just returns the cached value instantly —
-#   no file reading needed.
-#
-# This is called "lazy loading" — we only do the work when it's first needed.
-
-_settings_cache = None
-
-
-# =============================================================================
-# STEP 3: THE MAIN FUNCTION — get_settings()
-# =============================================================================
-
-def get_settings() -> dict:
+def _load_settings() -> dict:
     """
-    Returns the full settings dictionary loaded from config/settings.yaml.
-
-    The file is only read once — subsequent calls return the cached version.
-    If the file is missing, a clear error message is shown with instructions.
-
-    Returns:
-        dict — the complete settings from settings.yaml
-
-    Raises:
-        FileNotFoundError — if settings.yaml cannot be found
-        yaml.YAMLError    — if settings.yaml has a formatting error
+    Opens and parses settings.yaml.
+    Returns a dict of all settings.
+    If the file doesn't exist or has a YAML error, raises a clear error message.
     """
-    global _settings_cache
-    # `global` tells Python we're referring to the _settings_cache
-    # variable defined above, not creating a new local one.
-
-    # If we've already loaded the settings, return them immediately.
-    if _settings_cache is not None:
-        return _settings_cache
-
-    # First time: check that the file actually exists before trying to open it.
-    if not os.path.exists(SETTINGS_FILE):
+    if not os.path.exists(_SETTINGS_PATH):
         raise FileNotFoundError(
-            f"\n\n[settings_loader] ERROR: settings.yaml not found.\n"
-            f"Expected location: {SETTINGS_FILE}\n\n"
-            f"To fix this:\n"
-            f"  1. Make sure settings.yaml is in your config\\ folder.\n"
-            f"  2. Check that PROJECT_ROOT is correct: {PROJECT_ROOT}\n"
+            f"settings.yaml not found at: {_SETTINGS_PATH}\n"
+            f"Please create it from the settings.yaml template."
         )
+    with open(_SETTINGS_PATH, "r", encoding="utf-8") as f:
+        data = yaml.safe_load(f)
+    if data is None:
+        raise ValueError(f"settings.yaml is empty at: {_SETTINGS_PATH}")
+    return data
 
-    # Open and read the YAML file.
-    # "r" means read-only. "utf-8" handles international characters safely.
-    with open(SETTINGS_FILE, "r", encoding="utf-8") as f:
-        # yaml.safe_load() parses the YAML text into a Python dictionary.
-        # We use safe_load (not load) because it's more secure —
-        # it won't execute any code embedded in the YAML file.
-        loaded = yaml.safe_load(f)
-
-    # If the file exists but is empty, yaml.safe_load returns None.
-    # We treat that the same as a missing file.
-    if loaded is None:
-        raise ValueError(
-            f"[settings_loader] ERROR: settings.yaml is empty.\n"
-            f"File location: {SETTINGS_FILE}"
-        )
-
-    # Store in cache so we never read the file again.
-    _settings_cache = loaded
-    return _settings_cache
+# Load once at module import time
+_SETTINGS: dict = _load_settings()
 
 
-# =============================================================================
-# STEP 4: CONVENIENCE FUNCTION — get_data_path()
-# =============================================================================
-#
-# This is what MCP servers will actually call. It takes a short name like
-# "shipments" and returns the full absolute path to that CSV file.
-#
-# HOW IT BUILDS THE PATH:
-#   base  = settings["paths"]["base"]         → "C:\...\supply_chain_mcp_project"
-#   rel   = settings["paths"]["data"]["shipments"] → "data\shipments_sample.csv"
-#   full  = os.path.join(base, rel)           → "C:\...\data\shipments_sample.csv"
-#
-# The result is a complete, usable file path string.
+# ─── Core getter ─────────────────────────────────────────────────────────────
 
-def get_data_path(name: str) -> str:
+def get_setting(key_path: str, default=None):
     """
-    Returns the full absolute file path for a named data file.
+    Gets any value from settings.yaml using dot notation.
 
-    Args:
-        name: the key from settings.yaml under paths.data
-              Valid values: "shipments", "inventory", "purchase_orders",
-                            "freight", "warehouse"
+    Examples:
+        get_setting("database.path")                  → "data/supply_chain.db"
+        get_setting("performance.cache_ttl_seconds")  → 300
+        get_setting("security.read_only_mode")        → True
+        get_setting("notifications.enabled")          → True
 
-    Returns:
-        str — full absolute path to the CSV file
+    Parameters:
+        key_path : str  — dot-separated path into the YAML structure
+        default         — value to return if the key does not exist
+                          (default: None, which will raise KeyError if not set)
 
-    Raises:
-        KeyError — if the name doesn't exist in settings.yaml
-        FileNotFoundError — if the resolved file doesn't exist on disk
-
-    Example:
-        get_data_path("shipments")
-        → "C:\\Users\\preet\\...\\data\\shipments_sample.csv"
+    Returns the value at that path, or raises KeyError if missing and
+    no default was given.
     """
-    settings = get_settings()
+    keys = key_path.split(".")
+    node = _SETTINGS
 
-    # Navigate into the nested dictionary: paths → data → name
-    try:
-        base = settings["paths"]["base"]
-        relative_path = settings["paths"]["data"][name]
-    except KeyError:
-        raise KeyError(
-            f"[settings_loader] ERROR: '{name}' is not defined under paths.data "
-            f"in settings.yaml.\n"
-            f"Valid names are: {list(settings['paths']['data'].keys())}"
-        )
+    for key in keys:
+        if isinstance(node, dict) and key in node:
+            node = node[key]
+        else:
+            if default is not None:
+                return default
+            raise KeyError(
+                f"Setting '{key_path}' not found in settings.yaml. "
+                f"Add it under the correct section."
+            )
+    return node
 
-    # os.path.join combines the base path and relative path correctly
-    # on both Windows and Mac (handles slashes automatically).
-    full_path = os.path.join(base, relative_path)
 
-    # Warn clearly if the file doesn't exist — better than a cryptic CSV error later.
-    if not os.path.exists(full_path):
-        raise FileNotFoundError(
-            f"[settings_loader] ERROR: Data file not found.\n"
-            f"  Name requested: '{name}'\n"
-            f"  Resolved path:  {full_path}\n\n"
-            f"To fix this:\n"
-            f"  1. Check that paths.base is correct in settings.yaml.\n"
-            f"  2. Check that paths.data.{name} matches your actual filename.\n"
-        )
+# ─── Convenience helpers ──────────────────────────────────────────────────────
+# These are shortcuts for the most frequently used settings.
+# Every MCP server calls get_database_path() instead of reading the YAML directly.
+
+def get_database_path() -> str:
+    """
+    Returns the absolute path to supply_chain.db.
+
+    Why absolute path?
+    Claude Desktop launches MCP servers from an unknown working directory.
+    A relative path like "data/supply_chain.db" would break because Python
+    wouldn't know which folder to look in.
+    We resolve it to an absolute path using the project root.
+
+    Usage:
+        from config.settings_loader import get_database_path
+        DB_FILE = get_database_path()
+    """
+    relative_path = get_setting("database.path")
+    return os.path.join(_PROJECT_ROOT, relative_path)
+
+
+def get_log_path(log_key: str) -> str:
+    """
+    Returns the absolute path to any log file defined in settings.yaml.
+
+    Parameters:
+        log_key : str — dot-notation key for the log path
+                        e.g. "performance.token_log_path"
+                             "security.audit_log_path"
+                             "notifications.anomaly_log_path"
+
+    Usage:
+        from config.settings_loader import get_log_path
+        LOG_FILE = get_log_path("security.audit_log_path")
+    """
+    relative_path = get_setting(log_key)
+    full_path = os.path.join(_PROJECT_ROOT, relative_path)
+
+    # Ensure the logs/ directory exists — create it if not.
+    # This prevents FileNotFoundError when the first log entry is written.
+    log_dir = os.path.dirname(full_path)
+    os.makedirs(log_dir, exist_ok=True)
 
     return full_path
 
 
-# =============================================================================
-# STEP 5: CONVENIENCE FUNCTION — get_database_path()
-# =============================================================================
-#
-# Separate function for the SQLite database path (used in Phase 7+).
-# Works the same way as get_data_path() but for the database file.
-
-def get_database_path() -> str:
+def get_max_response_rows() -> int:
     """
-    Returns the full absolute path to the SQLite database file.
+    Returns the maximum number of rows any list tool should return to Claude.
 
-    Returns:
-        str — full path to supply_chain.db
+    Why this matters:
+    Returning 500 rows to Claude uses thousands of tokens and slows responses.
+    This cap ensures tools return a manageable summary, not a data dump.
+
+    Usage:
+        from config.settings_loader import get_max_response_rows
+        rows = rows[:get_max_response_rows()]
     """
-    settings = get_settings()
-    base = settings["paths"]["base"]
-    db_relative = settings["paths"]["database"]
-    return os.path.join(base, db_relative)
+    return get_setting("performance.max_response_rows", default=100)
 
 
-# =============================================================================
-# STEP 6: CONVENIENCE FUNCTION — get_threshold()
-# =============================================================================
-#
-# Makes it easy to read a single threshold value by name, without
-# having to navigate the full nested dictionary every time.
-
-def get_threshold(key: str):
+def get_cache_ttl() -> int:
     """
-    Returns a value from the thresholds section of settings.yaml.
+    Returns the cache TTL in seconds.
 
-    Args:
-        key: a dot-separated path into the thresholds section.
-             Examples:
-               "delay.delayed_max_days"   → 5
-               "escalation_threshold"     → 70
-               "risk.high_delay_pct"      → 0.30
-
-    Returns:
-        The value (int, float, etc.)
-
-    Example usage in a rules file:
-        from config.settings_loader import get_threshold
-        MAX_DELAYED = get_threshold("delay.delayed_max_days")
+    Usage:
+        from config.settings_loader import get_cache_ttl
+        ttl = get_cache_ttl()
     """
-    settings = get_settings()
-    thresholds = settings.get("thresholds", {})
-
-    # Support dot notation: "delay.delayed_max_days" → navigate nested dict
-    parts = key.split(".")
-    current = thresholds
-    for part in parts:
-        if isinstance(current, dict) and part in current:
-            current = current[part]
-        else:
-            raise KeyError(
-                f"[settings_loader] Threshold key '{key}' not found in settings.yaml.\n"
-                f"Available top-level keys: {list(thresholds.keys())}"
-            )
-    return current
+    return get_setting("performance.cache_ttl_seconds", default=300)
 
 
-# =============================================================================
-# STEP 7: CONVENIENCE FUNCTION — get_ci_settings()
-# =============================================================================
-#
-# Returns the entire CI agent settings block as a dictionary.
-# Used by the CI agent's learning engine and recommendation generator.
-
-def get_ci_settings() -> dict:
+def is_cache_enabled() -> bool:
     """
-    Returns the CI agent settings block from settings.yaml.
+    Returns True if the in-memory cache is enabled.
 
-    Returns:
-        dict — everything under the 'ci' key in settings.yaml
+    Usage:
+        from config.settings_loader import is_cache_enabled
+        if is_cache_enabled(): ...
     """
-    settings = get_settings()
-    return settings.get("ci", {})
+    return get_setting("performance.cache_enabled", default=True)
 
 
-# =============================================================================
-# STEP 8: CONVENIENCE FUNCTION — is_agent_enabled()
-# =============================================================================
-#
-# Used by the coordinator agent (Phase 10 Step 7) to decide which
-# agents to route requests to.
-
-def is_agent_enabled(agent_name: str) -> bool:
+def is_read_only_mode() -> bool:
     """
-    Returns True if the named agent is enabled in settings.yaml.
+    Returns True if read-only mode is enforced.
+    All agents should check this before running any query.
 
-    Args:
-        agent_name: one of the keys under 'agents' in settings.yaml
-                    e.g. "shipping_delay", "inventory", "freight"
-
-    Returns:
-        bool — True if enabled, False if disabled
+    Usage:
+        from config.settings_loader import is_read_only_mode
+        if not is_read_only_mode(): raise PermissionError(...)
     """
-    settings = get_settings()
-    agents = settings.get("agents", {})
-    return agents.get(agent_name, False)
+    return get_setting("security.read_only_mode", default=True)
 
 
-# =============================================================================
-# STEP 9: RELOAD FUNCTION — reload_settings()
-# =============================================================================
-#
-# If you change settings.yaml while the servers are running, normally
-# you'd have to restart everything. This function clears the cache so
-# the next call to get_settings() re-reads the file.
-#
-# Usage: from config.settings_loader import reload_settings
-#        reload_settings()
-
-def reload_settings():
+def is_token_tracking_enabled() -> bool:
     """
-    Clears the settings cache so the next call to get_settings() will
-    re-read settings.yaml from disk.
+    Returns True if token usage tracking is active.
 
-    Use this if you edit settings.yaml while MCP servers are running
-    and don't want to restart them.
+    Usage:
+        from config.settings_loader import is_token_tracking_enabled
     """
-    global _settings_cache
-    _settings_cache = None
-    print("[settings_loader] Settings cache cleared. Next call will reload from disk.")
+    return get_setting("performance.token_tracking_enabled", default=True)
 
 
-# =============================================================================
-# QUICK SELF-TEST — runs only when you execute this file directly
-# =============================================================================
-#
-# If you run:  python config\settings_loader.py
-# from your project root, this block will execute and show you a summary
-# of what was loaded. It will NOT run when imported by an MCP server.
-#
-# __name__ == "__main__" is True only when the file is run directly,
-# not when it is imported by another file.
+def get_token_alert_threshold() -> int:
+    """
+    Returns the token count above which a single tool call triggers an alert.
 
-if __name__ == "__main__":
-    print("=" * 60)
-    print("settings_loader.py — self-test")
-    print("=" * 60)
+    Usage:
+        from config.settings_loader import get_token_alert_threshold
+    """
+    return get_setting("performance.token_alert_threshold", default=2000)
 
-    try:
-        s = get_settings()
-        print(f"\n✓ Settings loaded successfully from:\n  {SETTINGS_FILE}\n")
 
-        print(f"  Project:  {s['project']['name']} v{s['project']['version']}")
-        print(f"  Owner:    {s['project']['owner']}")
-        print(f"  Phase:    {s['project']['phase']}")
-        print()
+def is_notifications_enabled() -> bool:
+    """
+    Returns True if the notification system is active.
 
-        print("  Data paths:")
-        for name, rel in s["paths"]["data"].items():
-            try:
-                full = get_data_path(name)
-                exists = "✓" if os.path.exists(full) else "✗ FILE NOT FOUND"
-                print(f"    {name:<20} {exists}")
-                print(f"    {'':20} {full}")
-            except FileNotFoundError as e:
-                print(f"    {name:<20} ✗ FILE NOT FOUND")
-        print()
+    Usage:
+        from config.settings_loader import is_notifications_enabled
+    """
+    return get_setting("notifications.enabled", default=True)
 
-        print(f"  Delay thresholds:")
-        print(f"    DELAYED_MAX_DAYS:    {get_threshold('delay.delayed_max_days')}")
-        print(f"    ESCALATION_SCORE:   {s['thresholds']['escalation_threshold']}")
-        print(f"    HIGH_RISK_PCT:      {get_threshold('risk.high_delay_pct')}")
-        print()
 
-        print("  Agents enabled:")
-        for agent, enabled in s["agents"].items():
-            status = "✓ enabled" if enabled else "✗ disabled"
-            print(f"    {agent:<25} {status}")
+def get_anomaly_threshold(threshold_key: str, default=None):
+    """
+    Returns a specific anomaly threshold value from settings.yaml.
 
-        print()
-        print("  Database path:")
-        try:
-            db_path = get_database_path()
-            exists = "✓" if os.path.exists(db_path) else "✗ FILE NOT FOUND"
-            print(f"    supply_chain.db      {exists}")
-            print(f"    {'':20} {db_path}")
-        except Exception as e:
-            print(f"    ✗ ERROR: {e}")
+    Parameters:
+        threshold_key : str — the threshold name under notifications.anomaly_thresholds
+                              e.g. "critical_orders_pct"
+                                   "new_freight_holds"
+                                   "inventory_stockouts"
 
-        print()
-        print("Self-test complete. ✓")
+    Usage:
+        from config.settings_loader import get_anomaly_threshold
+        pct = get_anomaly_threshold("critical_orders_pct")  # returns 20
+    """
+    return get_setting(f"notifications.anomaly_thresholds.{threshold_key}", default=default)
 
-    except Exception as e:
-        print(f"\n✗ ERROR: {e}")
+
+def get_llm_fallback_config() -> dict:
+    """
+    Returns the full fallback LLM provider config dict.
+    Used by scripts/fallback_chat.py to connect to OpenRouter.
+
+    Returns a dict with keys: name, base_url, model, api_key_env_var,
+                               max_tokens, temperature
+
+    Usage:
+        from config.settings_loader import get_llm_fallback_config
+        config = get_llm_fallback_config()
+        api_key = os.environ.get(config["api_key_env_var"])
+    """
+    return get_setting("llm_providers.fallback")
+
+
+def is_agent_enabled(agent_key: str) -> bool:
+    """
+    Returns True if a specific agent is enabled in settings.yaml.
+
+    Parameters:
+        agent_key : str — the agent key under the agents: block
+                          e.g. "coordinator_agent", "performance_agent"
+
+    Usage:
+        from config.settings_loader import is_agent_enabled
+        if not is_agent_enabled("coordinator_agent"):
+            print("Coordinator agent is disabled in settings.yaml")
+    """
+    return get_setting(f"agents.{agent_key}", default=False)
+
+
+def get_project_root() -> str:
+    """
+    Returns the absolute path to the project root folder.
+    Useful when any script needs to build paths to project files.
+
+    Usage:
+        from config.settings_loader import get_project_root
+        claude_md_path = os.path.join(get_project_root(), "CLAUDE.md")
+    """
+    return _PROJECT_ROOT
