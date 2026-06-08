@@ -3,28 +3,19 @@
 # =============================================================================
 #
 # PURPOSE:
-#   This file reads config/settings.yaml and provides helper functions
-#   that every MCP server and module uses to get configuration values.
-#
-# WHY THIS EXISTS:
-#   Without this file, every Python file would need to open and parse
-#   settings.yaml itself. That means 12 files all doing the same work.
-#   This file does it once and all others just call get_setting().
-#
-# HOW TO USE IN ANY PYTHON FILE:
-#   from config.settings_loader import get_setting, get_database_path
-#
-#   # Get any value from settings.yaml using dot notation:
-#   ttl = get_setting("performance.cache_ttl_seconds")   # returns 300
-#   path = get_setting("database.path")                  # returns "data/supply_chain.db"
-#
-#   # Convenience helpers for the most common lookups:
-#   db_path = get_database_path()
-#   max_rows = get_max_response_rows()
-#
-# =============================================================================
+# ...
 
-import os
+"""
+Central settings loader for the Supply Chain Control Tower.
+
+Implements a single-load configuration pattern: settings.yaml is parsed
+once at module import time and all 12 MCP agents read from the same
+in-memory dict via get_setting(). This ensures consistent behaviour
+across agents and means a single settings.yaml change propagates
+everywhere without restarting individual servers.
+"""
+
+import os        # ← imports start here
 import yaml
 
 # ─── Find the project root ────────────────────────────────────────────────────
