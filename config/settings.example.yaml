@@ -112,27 +112,17 @@ need_action_days: 5
 # -----------------------------------------------------------------------------
 
 performance:
-
-# Cache settings
-
 cache_enabled: true
 cache_ttl_seconds: 300
 cache_max_rows: 50000
-
-# Token tracking settings
 
 token_tracking_enabled: true
 token_log_path: "logs/token_usage.json"
 token_alert_threshold: 2000
 token_chars_per_token: 4
 
-# Query timing settings
-
 slow_query_threshold_ms: 500
 perf_log_path: "logs/perf_log.json"
-
-# Maximum rows returned to Claude from list-style tools.
-
 max_response_rows: 100
 
 # -----------------------------------------------------------------------------
@@ -142,24 +132,15 @@ max_response_rows: 100
 # -----------------------------------------------------------------------------
 
 security:
-
-# Keep true for normal demo use.
-
 read_only_mode: true
-
-# Input and SQL safety controls.
-
 max_input_length: 100
+
 block_write_operations: true
 allowed_sql_operations:
 - "SELECT"
 
-# Audit logging.
-
 log_all_tool_calls: true
 audit_log_path: "logs/audit.log"
-
-# Basic rate limiting.
 
 max_calls_per_minute: 30
 rate_limit_window_seconds: 60
@@ -174,8 +155,6 @@ notifications:
 enabled: true
 
 # Public demo default: log only.
-
-# Local users may add desktop or email notifications if supported.
 
 channels:
 - "log"
@@ -241,13 +220,7 @@ coordinator_log_path: "logs/coordinator.log"
 # -----------------------------------------------------------------------------
 
 ci_agent:
-
-# Minimum confidence score for showing a recommendation.
-
 min_confidence: 0.5
-
-# Number of days of demo history to review per scan.
-
 lookback_days: 30
 
 # -----------------------------------------------------------------------------
