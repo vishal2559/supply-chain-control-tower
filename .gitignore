@@ -71,3 +71,15 @@ htmlcov/                      # Coverage HTML report folder
 
 # ── OPERATING SYSTEM ─────────────────────────────────────────────────────────
 .DS_Store                     # macOS folder metadata (if ever used on Mac)
+
+# ── OPERATING SYSTEM ─────────────────────────────────────────────────────────
+.DS_Store                     # macOS folder metadata (if ever used on Mac)
+
+
+# ── PRIVATE BACKUP — local only, never commit ────────────────────────────────
+_private_backup_original/     # Local backup of original private files
+
+
+# ── PRIVATE PLANNING DOCS ────────────────────────────────────────────────────
+ENTERPRISE_PLAN.md                  # Private product strategy — not for public repo
+PROJECT_CONTEXT_FOR_NEW_CHAT.md     # Private session context — not for public repo
