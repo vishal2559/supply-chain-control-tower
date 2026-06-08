@@ -1,55 +1,36 @@
 # =============================================================================
-
 # config/settings.example.yaml
-
 # Supply Chain Control Tower — Public Demo Configuration Template
-
 # =============================================================================
-
-
+#
 # HOW TO USE THIS FILE:
-
-# 1. Copy this file and name the copy: settings.yaml
-
-# Keep it in the same config/ folder.
-
-
-# 2. Update values locally as needed.
-
-
-# 3. Do not commit your real settings.yaml to GitHub.
-
-# Your real settings.yaml may contain local paths, private settings,
-
-# machine-specific values, or environment-specific configuration.
-
-
-# Example:
-
-# cp config/settings.example.yaml config/settings.yaml
-
-
+#   1. Copy this file and name the copy: settings.yaml
+#      Keep it in the same config/ folder.
+#
+#   2. Update values locally as needed for your environment.
+#
+#   3. Do not commit your real settings.yaml to GitHub.
+#      Your real settings.yaml may contain local paths, private settings,
+#      machine-specific values, or environment-specific configuration.
+#
+#   Example:
+#     cp config/settings.example.yaml config/settings.yaml
+#
 # SECURITY:
-
-# Do not put API keys, passwords, access tokens, real customer data,
-
-# private project notes, or local machine secrets in this file.
-
-
-# Store secrets in environment variables or a local .env file.
-
+#   Do not put API keys, passwords, access tokens, real customer data,
+#   private project notes, or local machine secrets in this file.
+#   Store secrets in environment variables or a local .env file.
+#
 # =============================================================================
 
-# ── DATABASE ─────────────────────────────────────────────────────
+
+# ── DATABASE ──────────────────────────────────────────────────────────────────
 
 database:
-  # Public demo database path.
-  # Replace locally if your database uses a different file name or location.
+  # Path to the SQLite database file.
+  # Update locally if your database uses a different name or location.
   #
-  # Recommended public/demo value:
-  #   data/sample_supply_chain.db
-  #
-  # Local example:
+  # Relative path (recommended for portability):
   #   data/supply_chain.db
   #
   # Windows absolute path example:
@@ -57,186 +38,209 @@ database:
   #
   # Mac/Linux absolute path example:
   #   /home/yourname/supply-chain-control-tower/data/supply_chain.db
-  path: "data/sample_supply_chain.db"
+  path: "data/supply_chain.db"
 
-# Set to true after running the index setup script.
+  # Set to true after running the index setup script (build_indexes.py).
+  indexes_built: false
 
-indexes_built: false
+  # Safety limit for query result size.
+  max_rows_per_query: 10000
 
-# Safety limit for query size.
 
-max_rows_per_query: 10000
-
-# ── DELAY THRESHOLDS ─────────────────────────────────────────────
+# ── DELAY THRESHOLDS ─────────────────────────────────────────────────────────
 
 thresholds:
+  # Controls when shipments transition into delayed or action-required categories.
+  # Adjust these values locally to match your operational requirements.
+  # Do not expose your production thresholds in public documentation.
+  delayed_days: 1        # Days overdue before a shipment is flagged as delayed
+  need_action_days: 5    # Days overdue before a shipment requires immediate action
 
-# Controls when orders move into delayed or action-needed categories.
 
-delayed_days: 1
-need_action_days: 5
+# ── PERFORMANCE ───────────────────────────────────────────────────────────────
 
-# ── PERFORMANCE ──────────────────────────────────────────────────
 performance:
-cache_enabled: true
-cache_ttl_seconds: 300
-cache_max_rows: 50000
+  # In-memory cache to reduce repeated database queries.
+  cache_enabled: true
+  cache_ttl_seconds: 300      # How long cached results are kept (seconds)
+  cache_max_rows: 50000       # Maximum rows held in cache at one time
 
-token_tracking_enabled: true
-token_log_path: "logs/token_usage.json"
-token_alert_threshold: 2000
-token_chars_per_token: 4
+  # Token usage estimation for monitoring purposes.
+  token_tracking_enabled: true
+  token_log_path: "logs/token_usage.json"
+  token_alert_threshold: 2000   # Alert when estimated tokens per response exceeds this
+  token_chars_per_token: 4      # Approximate characters per token (used for estimation)
 
-slow_query_threshold_ms: 500
-perf_log_path: "logs/perf_log.json"
-max_response_rows: 100
+  # Query performance monitoring.
+  slow_query_threshold_ms: 500  # Queries slower than this are logged as slow
+  perf_log_path: "logs/perf_log.json"
+  max_response_rows: 100        # Maximum rows returned in a single tool response
 
-# ── SECURITY ─────────────────────────────────────────────────────
+
+# ── SECURITY ──────────────────────────────────────────────────────────────────
 
 security:
-read_only_mode: true
-max_input_length: 100
+  # Read-only mode prevents any write operations to the database.
+  # Keep this true for demo and production deployments.
+  read_only_mode: true
+  block_write_operations: true
 
-block_write_operations: true
-allowed_sql_operations:
-- "SELECT"
+  # Maximum length of any string input accepted by tools.
+  max_input_length: 100
 
-log_all_tool_calls: true
-audit_log_path: "logs/audit.log"
+  # Only SELECT statements are permitted in read-only mode.
+  allowed_sql_operations:
+    - "SELECT"
 
-max_calls_per_minute: 30
-rate_limit_window_seconds: 60
+  # All tool calls are logged to the audit log.
+  log_all_tool_calls: true
+  audit_log_path: "logs/audit.log"
 
-# ── NOTIFICATIONS ────────────────────────────────────────────────
+  # Rate limiting to protect against runaway agent loops.
+  max_calls_per_minute: 30
+  rate_limit_window_seconds: 60
+
+
+# ── NOTIFICATIONS ─────────────────────────────────────────────────────────────
 
 notifications:
-enabled: true
+  enabled: true
 
-# Public demo default: log only.
+  # Notification channels. Options: log, toast (Windows), email.
+  # Public demo default: log only.
+  channels:
+    - "log"
 
-channels:
-- "log"
+  anomaly_log_path: "logs/anomaly.log"
 
-anomaly_log_path: "logs/anomaly.log"
+  # Thresholds that trigger anomaly alerts.
+  # Adjust locally to match your operational baseline.
+  anomaly_thresholds:
+    critical_orders_pct: 20          # % of orders in NEED_ACTION before alert fires
+    unknown_rate_pct: 30             # % of orders with UNKNOWN reason before alert fires
+    new_freight_holds: 2             # New freight holds in one check before alert fires
+    inventory_stockouts: 1           # Stockouts before alert fires
+    rapid_tool_calls_per_minute: 10  # Tool call rate before rate-limit alert fires
+    token_spike_multiplier: 3        # Token usage multiplier vs baseline before alert fires
+    slow_tool_call_ms: 500           # Tool response time before performance alert fires
 
-anomaly_thresholds:
-critical_orders_pct: 20
-unknown_rate_pct: 30
-new_freight_holds: 2
-inventory_stockouts: 1
-rapid_tool_calls_per_minute: 10
-token_spike_multiplier: 3
-slow_tool_call_ms: 500
 
-# ── HOOKS / BACKGROUND SCHEDULER ─────────────────────────────────
+# ── HOOKS / BACKGROUND SCHEDULER ─────────────────────────────────────────────
 
 hooks:
+  # Background jobs run on a schedule using APScheduler.
+  # All times are UTC. Disable any hook by setting enabled: false.
 
-# Times are in UTC.
+  morning_briefing:
+    enabled: true
+    hour: 2
+    minute: 30
 
-# Disable any hook by setting enabled: false.
+  ci_scan:
+    enabled: true
+    interval_minutes: 60
 
-morning_briefing:
-enabled: true
-hour: 2
-minute: 30
+  need_action_monitor:
+    enabled: true
+    interval_minutes: 30
 
-ci_scan:
-enabled: true
-interval_minutes: 60
+  agent_health_check:
+    enabled: true
+    interval_hours: 6
 
-need_action_monitor:
-enabled: true
-interval_minutes: 30
 
-agent_health_check:
-enabled: true
-interval_hours: 6
-
-# ── COORDINATOR ──────────────────────────────────────────────────
+# ── COORDINATOR ───────────────────────────────────────────────────────────────
 
 coordinator:
-enabled: true
-agent_timeout_seconds: 10
-max_agents_per_request: 5
-health_check_on_startup: true
-synthesis_mode: "summary"
-coordinator_log_path: "logs/coordinator.log"
+  enabled: true
+  agent_timeout_seconds: 10
+  max_agents_per_request: 5
+  health_check_on_startup: true
+  synthesis_mode: "summary"
+  coordinator_log_path: "logs/coordinator.log"
 
-# ── CI AGENT SETTINGS ────────────────────────────────────────────
+
+# ── CI AGENT ──────────────────────────────────────────────────────────────────
 
 ci_agent:
-min_confidence: 0.5
-lookback_days: 30
+  # Minimum confidence score for a recommendation to be surfaced.
+  # Adjust locally based on your data quality and signal volume.
+  min_confidence: 0.5
+  lookback_days: 30
 
-# ── TESTING ──────────────────────────────────────────────────────
+
+# ── TESTING ───────────────────────────────────────────────────────────────────
 
 testing:
-enabled: true
+  enabled: true
 
-test_orders:
-- "SO10001"
-- "SO10002"
-- "SO10003"
+  # Sample order IDs, items, and warehouses used by the test agent.
+  # Update to match your local database records.
+  test_orders:
+    - "SO10001"
+    - "SO10002"
+    - "SO10003"
 
-test_items:
-- "ITEM-001"
-- "ITEM-002"
+  test_items:
+    - "ITEM-001"
+    - "ITEM-002"
 
-test_warehouses:
-- "WH-01"
-- "WH-02"
+  test_warehouses:
+    - "WH-01"
+    - "WH-02"
 
-report_path: "logs/test_results.json"
-log_path: "logs/test_results.log"
-fail_on_error: false
-min_pass_rate_pct: 90
+  report_path: "logs/test_results.json"
+  log_path: "logs/test_results.log"
+  fail_on_error: false
+  min_pass_rate_pct: 90
 
-# ── LLM PROVIDERS ────────────────────────────────────────────────
+
+# ── LLM PROVIDERS ─────────────────────────────────────────────────────────────
 
 llm_providers:
-primary:
-name: "claude-desktop"
-enabled: true
+  primary:
+    name: "claude-desktop"
+    enabled: true
 
-# Optional fallback support.
+  # Optional LLM fallback for continuity when the primary assistant
+  # is unavailable or rate-limited.
+  # Disabled by default in the public demo.
+  # If enabled locally, store your API key in .env only — never commit it.
+  fallback:
+    name: "openrouter"
+    enabled: false
+    base_url: "https://openrouter.ai/api/v1"
+    model: "example-model-name"
+    api_key_env_var: "OPENROUTER_API_KEY"
+    max_tokens: 4096
+    temperature: 0.1
+  auto_fallback: false
 
-# Disabled by default in the public demo.
 
-# If enabled locally, store API keys in environment variables only.
+# ── AGENTS ────────────────────────────────────────────────────────────────────
 
-fallback:
-name: "openrouter"
-enabled: false
-base_url: "https://openrouter.ai/api/v1"
-model: "example-model-name"
-api_key_env_var: "OPENROUTER_API_KEY"
-max_tokens: 4096
-temperature: 0.1
-
-auto_fallback: false
-
-# ── AGENTS ───────────────────────────────────────────────────────
-
+# Enable or disable individual agents.
+# All agents are enabled by default in this demo configuration.
 agents:
-shipping_delay_agent: true
-inventory_agent: true
-po_agent: true
-freight_agent: true
-warehouse_agent: true
-investigation_agent: true
-recommendation_agent: true
-ci_agent: true
-memory_agent: true
-performance_agent: true
-coordinator_agent: true
-test_agent: true
+  shipping_delay_agent: true
+  inventory_agent: true
+  po_agent: true
+  freight_agent: true
+  warehouse_agent: true
+  investigation_agent: true
+  recommendation_agent: true
+  ci_agent: true
+  memory_agent: true
+  performance_agent: true
+  coordinator_agent: true
+  test_agent: true
 
-# ── LOGGING ──────────────────────────────────────────────────────
+
+# ── LOGGING ───────────────────────────────────────────────────────────────────
 
 logging:
-level: "INFO"
-console_output: true
-rotate_logs: true
-max_bytes: 1048576
-backup_count: 5
+  level: "INFO"
+  console_output: true
+  rotate_logs: true
+  max_bytes: 1048576   # 1 MB per log file
+  backup_count: 5      # Number of rotated log files to keep
