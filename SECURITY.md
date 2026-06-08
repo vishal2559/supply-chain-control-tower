@@ -1,93 +1,126 @@
 # Security Policy
 
 ## Project: Supply Chain Control Tower
-**Owner:** Vishal  
+
+**Owner:** Vishal
 **Repository:** https://github.com/vishal2559/supply-chain-control-tower
 
 ---
 
 ## Supported Versions
 
-This project is actively maintained. Security fixes are applied to the
-latest version on the `main` branch only.
+This project is actively maintained. Security fixes are applied to the latest version on the `main` branch.
 
-| Version | Supported |
-|---------|-----------|
-| Latest (main branch) | ✅ Yes |
-| Older commits | ❌ No — please update to latest |
-
----
-
-## Scope — What This Project Protects
-
-This system is a **local AI tool** that runs on your own machine.
-It does not expose any public API, web server, or network endpoint.
-
-Security boundaries this project enforces:
-
-1. **No hardcoded secrets** — all paths and settings are in `settings.yaml`
-   which is excluded from GitHub via `.gitignore`
-
-2. **No real data on GitHub** — the SQLite database (`supply_chain.db`)
-   and memory file (`project_memory.json`) are excluded from GitHub
-
-3. **Input validation** — all MCP tool inputs are validated and sanitised
-   before being processed by the rules engine
-
-4. **Prompt injection protection** — all data loaded from CSV or database
-   is sanitised before being returned to Claude, preventing instruction
-   injection through data fields
-
-5. **Deterministic rules engine** — delay status, reason codes, and priority
-   scores are all computed in Python before Claude sees them, so Claude
-   cannot hallucinate operational decisions
+| Version              | Supported                                |
+| -------------------- | ---------------------------------------- |
+| Latest `main` branch | Yes                                      |
+| Older commits        | No — please update to the latest version |
 
 ---
 
-## How to Report a Vulnerability
+## Security Scope
 
-**Please do NOT open a public GitHub issue for security vulnerabilities.**
-Public issues are visible to everyone immediately.
+The **Supply Chain Control Tower** is a local demo/community project designed to run on a user's own machine.
 
-Instead, report security issues privately:
+The project is intended for learning, portfolio, open technical contribution, and architecture demonstration purposes. It uses sample/demo data and local configuration.
 
-1. Go to the **Security** tab on this repository
-2. Click **"Report a vulnerability"** (GitHub's private reporting feature)
-3. Describe what you found and how to reproduce it
+Security considerations covered by this project include:
 
-I will respond within **72 hours** and aim to release a fix within **7 days**
-for confirmed vulnerabilities.
+1. **No committed secrets**
+   API keys, tokens, credentials, and local `.env` files should never be committed to GitHub.
+
+2. **Sample/demo data only**
+   The public repository should not contain real customer data, private company data, or sensitive operational records.
+
+3. **Configuration separation**
+   Public-safe configuration can be included for demo use. Private credentials, local overrides, and sensitive values should be stored in `.env` files or ignored local configuration files.
+
+4. **Read-only data access pattern**
+   The project is designed around local analysis and demo-oriented data access. Tools should avoid destructive database operations unless explicitly required for setup or controlled maintenance scripts.
+
+5. **Input validation**
+   User inputs passed into MCP tools should be validated before processing.
+
+6. **Prompt-injection awareness**
+   Data returned from files or databases should be treated as data, not instructions. Tool outputs should be handled carefully before being passed to Claude.
+
+7. **Audit and observability**
+   Where available, tool calls, performance events, and anomalies may be logged locally to support debugging and review.
 
 ---
 
-## What to Include in Your Report
+## Reporting a Vulnerability
 
-A good security report includes:
+Please do **not** open a public GitHub issue for security vulnerabilities.
 
-- **Description** — what the vulnerability is
-- **Steps to reproduce** — how to trigger it
-- **Impact** — what an attacker could do with it
-- **Suggested fix** (optional but appreciated)
+To report a vulnerability privately:
+
+1. Go to the **Security** tab on this repository.
+2. Choose **Report a vulnerability** if available.
+3. Describe the issue and steps to reproduce it.
+
+I will make a reasonable effort to review reports within **72 hours** and address confirmed issues in a future update.
+
+---
+
+## What to Include in a Report
+
+A helpful report should include:
+
+* Description of the issue
+* Steps to reproduce
+* Expected behavior
+* Actual behavior
+* Potential impact
+* Suggested fix, if available
 
 ---
 
 ## Out of Scope
 
-The following are **not** security vulnerabilities for this project:
+The following are generally out of scope for this demo project:
 
-- Issues that only affect your local machine and require physical access
-- Denial of service against a local process
-- Issues in third-party libraries (report those to the library maintainers)
-- Findings from automated scanners with no demonstrated impact
+* Issues requiring physical access to the user's machine
+* Denial-of-service against a local-only process
+* Findings from automated scanners without demonstrated impact
+* Vulnerabilities in third-party libraries that should be reported upstream
+* Misconfiguration caused by committing local secrets or `.env` files manually
+
+---
+
+## Secret Handling
+
+Do not commit files that contain:
+
+* API keys
+* Access tokens
+* Passwords
+* Private database files
+* Real customer data
+* Private company data
+* Local machine paths with sensitive information
+* Personal project memory or private planning notes
+
+Recommended `.gitignore` entries include:
+
+```gitignore
+.env
+.env.*
+*.db
+logs/
+memory/project_memory.json
+_private_backup_original/
+*_PRIVATE.md
+```
+
+If a secret is accidentally committed, remove it from the repository and rotate the exposed credential immediately.
 
 ---
 
 ## Acknowledgements
 
-Security researchers who responsibly disclose valid vulnerabilities
-will be credited in the project's release notes (with their permission).
+Security researchers or contributors who responsibly disclose valid issues may be acknowledged in release notes with their permission.
 
 ---
 
-*This security policy follows the
-[GitHub coordinated disclosure model](https://docs.github.com/en/code-security/security-advisories/guidance-on-reporting-and-writing/about-coordinated-disclosure-of-security-vulnerabilities).*
+*This policy is intended for the public demo/community edition of the Supply Chain Control Tower project.*
