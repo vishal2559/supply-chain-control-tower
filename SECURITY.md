@@ -27,24 +27,31 @@ The project is intended for learning, portfolio, open technical contribution, an
 Security considerations covered by this project include:
 
 1. **No committed secrets**
+
    API keys, tokens, credentials, and local `.env` files should never be committed to GitHub.
 
 2. **Sample/demo data only**
+
    The public repository should not contain real customer data, private company data, or sensitive operational records.
 
 3. **Configuration separation**
+
    Public-safe configuration can be included for demo use. Private credentials, local overrides, and sensitive values should be stored in `.env` files or ignored local configuration files.
 
 4. **Read-only data access pattern**
+
    The project is designed around local analysis and demo-oriented data access. Tools should avoid destructive database operations unless explicitly required for setup or controlled maintenance scripts.
 
 5. **Input validation**
+
    User inputs passed into MCP tools should be validated before processing.
 
 6. **Prompt-injection awareness**
+
    Data returned from files or databases should be treated as data, not instructions. Tool outputs should be handled carefully before being passed to Claude.
 
 7. **Audit and observability**
+
    Where available, tool calls, performance events, and anomalies may be logged locally to support debugging and review.
 
 ---
