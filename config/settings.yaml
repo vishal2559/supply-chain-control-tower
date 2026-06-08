@@ -1,390 +1,92 @@
 # =============================================================================
-# config/settings.yaml
-# Supply Chain Control Tower — Central Configuration
+# config/settings.example.yaml
+# Supply Chain Control Tower — Public Demo Configuration Template
 # =============================================================================
 #
-# THIS IS THE SINGLE SOURCE OF TRUTH FOR ALL PROJECT SETTINGS.
+# Copy this file to:
+#   config/settings.yaml
 #
-# Rule: Never hardcode paths, thresholds, timeouts, or flags in any .py file.
-#       If a value might ever need to change → it belongs here.
+# Then update values locally as needed.
 #
-# How to read this file in Python:
-#   from config.settings_loader import get_setting, get_database_path
-#
-# How to add a new setting:
-#   1. Add it here under the correct section
-#   2. Read it in your Python file using get_setting("section.key")
-#   3. Never copy the value into the .py file directly
-#
-# SECURITY RULE:
-#   API keys, passwords, and secrets must NEVER appear in this file.
-#   Store secrets as Windows environment variables.
-#   This file only stores the NAME of the environment variable to read.
-#   Example:  api_key_env_var: "OPENROUTER_API_KEY"   ← name only, not the key
-#
+# Do not commit real secrets, API keys, local machine paths, or private settings.
+# The real config/settings.yaml should stay local and should be ignored by Git.
 # =============================================================================
 
-
-# -----------------------------------------------------------------------------
-# DATABASE
-# Controls where the SQLite database lives and how it is accessed.
-# All 12 MCP servers read this path — change it once here if the DB moves.
-# -----------------------------------------------------------------------------
 database:
-  # Path to the SQLite database file, relative to project root.
-  # Use forward slashes — Python on Windows accepts both.
-  path: "data/supply_chain.db"
-
-  # Whether SQLite indexes have been built.
-  # Set to true after running scripts/build_indexes.py
-  # If false, the system still works but queries are slower on large datasets.
-  #indexes_built: true
-  indexes_built: true
-
-  # Maximum rows to load per query.
-  # Prevents accidentally loading millions of rows into memory.
-  # Increase this if your real data exceeds 10,000 rows per table.
+  path: "data/sample_supply_chain.db"
+  indexes_built: false
   max_rows_per_query: 10000
 
-
-# -----------------------------------------------------------------------------
-# PERFORMANCE
-# Controls caching, token tracking, and query timing.
-# These settings make the system fast and observable at scale.
-# -----------------------------------------------------------------------------
 performance:
-
-  # --- Cache settings ---
-  # The cache loads data from SQLite once and holds it in memory.
-  # Subsequent tool calls reuse the in-memory data instead of hitting SQLite.
-  # This makes repeated queries within the same session much faster.
-
-  # Master switch. Set to false to disable caching entirely (useful for debugging).
   cache_enabled: true
-
-  # How long (in seconds) cached data is considered fresh before reloading from SQLite.
-  # 300 = 5 minutes. Supply chain data rarely changes mid-session, so 5 min is safe.
-  # Reduce to 60 if your data updates frequently. Increase to 600 for batch processing.
   cache_ttl_seconds: 300
-
-  # Safety limit: never cache more than this many rows in memory.
-  # Prevents the cache from consuming too much RAM on very large datasets.
   cache_max_rows: 50000
-
-  # --- Token tracking settings ---
-  # Token tracking estimates how many Claude tokens each tool response consumes.
-  # This helps you understand query cost and identify expensive tools.
-
-  # Master switch for token tracking.
   token_tracking_enabled: true
-
-  # Path where token usage is logged. Relative to project root.
   token_log_path: "logs/token_usage.json"
-
-  # Alert threshold: if a single tool call produces a response estimated at
-  # more than this many tokens, an anomaly is logged.
-  # 2000 tokens ≈ a response with ~150 rows of data.
   token_alert_threshold: 2000
-
-  # Approximation used to estimate tokens from character count.
-  # Industry standard: 1 token ≈ 4 characters of English text.
-  # This is an estimate — actual Claude tokenisation may differ slightly.
   token_chars_per_token: 4
-
-  # --- Query timing settings ---
-  # Every tool call records how long it took to run.
-  # Calls exceeding slow_query_threshold_ms are flagged as slow queries.
-
-  # Threshold in milliseconds. Any tool taking longer than this is flagged.
-  # 500ms = half a second. Adjust down if you want stricter performance targets.
   slow_query_threshold_ms: 500
-
-  # Path where performance timing is logged. Relative to project root.
   perf_log_path: "logs/perf_log.json"
-
-  # Maximum rows any list-returning tool is allowed to return to Claude.
-  # This caps token usage — instead of returning 500 delayed orders,
-  # a tool returns at most 100 and tells Claude there are more.
-  # Claude can then ask for the next page if needed.
   max_response_rows: 100
 
-
-# -----------------------------------------------------------------------------
-# SECURITY
-# Controls read-only enforcement, audit logging, and input limits.
-# These settings protect your data from accidental or malicious modification.
-# -----------------------------------------------------------------------------
 security:
-
-  # Enforces read-only mode across all agents.
-  # When true: agents can only run SELECT queries. INSERT/UPDATE/DELETE are blocked.
-  # NEVER set this to false in production. Only false during schema setup scripts.
   read_only_mode: true
-
-  # Hard cap on all tool input strings.
-  # Any input longer than this is rejected with an error.
-  # Blocks attack strings and accidental huge inputs.
   max_input_length: 100
-
-  # Log every tool call to the audit log.
-  # When true: every tool call records tool name, timestamp, and input parameters.
-  # This gives you a full audit trail of all agent activity.
   log_all_tool_calls: true
-
-  # Path to the audit log file. Relative to project root.
   audit_log_path: "logs/audit.log"
-
-  # Explicitly block any SQL operation that is not SELECT.
-  # This is a belt-and-suspenders check on top of read_only_mode.
-  # Even if read_only_mode were somehow bypassed, this blocks writes at the SQL level.
   block_write_operations: true
-
-  # SQL operation whitelist. Only these SQL keywords are permitted.
-  # Any query containing DELETE, DROP, UPDATE, INSERT, TRUNCATE, ALTER is rejected.
   allowed_sql_operations:
     - "SELECT"
-
-  # Maximum number of times the same tool can be called per minute.
-  # Protects against runaway loops or potential abuse patterns.
-  # 30 calls/minute is generous for normal use but catches unusual spikes.
   max_calls_per_minute: 30
-
-  # Rate limit window in seconds (60 = per minute).
   rate_limit_window_seconds: 60
 
-
-# -----------------------------------------------------------------------------
-# NOTIFICATIONS
-# Controls anomaly detection thresholds and how you are alerted.
-# All thresholds are percentages or counts — adjust to match your data volume.
-# -----------------------------------------------------------------------------
 notifications:
-
-  # Master switch. Set to false to silence all notifications (not recommended).
   enabled: true
-
-  # Which channels to send notifications to.
-  # "log"     = always writes to logs/anomaly.log (recommended: always on)
-  # "desktop" = Windows toast notification (pops up on your screen)
-  # "email"   = sends email (requires email_enabled: true and SMTP env vars)
   channels:
     - "log"
-    - "desktop"
-
-  # Email notifications (optional — disabled by default).
-  # To enable: set email_enabled to true, then set these Windows env variables:
-  #   NOTIFY_EMAIL_TO    = recipient email address
-  #   NOTIFY_EMAIL_FROM  = sender email address
-  #   NOTIFY_SMTP_HOST   = your SMTP server (e.g. smtp.gmail.com)
-  #   NOTIFY_SMTP_PORT   = SMTP port (usually 587)
-  #   NOTIFY_SMTP_PASS   = your email password or app password
-  # SECURITY: never put email addresses or passwords in this file.
-  email_enabled: false
-  email_to_env_var: "NOTIFY_EMAIL_TO"
-  email_from_env_var: "NOTIFY_EMAIL_FROM"
-  smtp_host_env_var: "NOTIFY_SMTP_HOST"
-  smtp_port_env_var: "NOTIFY_SMTP_PORT"
-  smtp_pass_env_var: "NOTIFY_SMTP_PASS"
-
-  # Path where anomaly events are logged.
   anomaly_log_path: "logs/anomaly.log"
 
-  # --- Supply chain anomaly thresholds ---
-  # These trigger alerts when your supply chain data shows unusual patterns.
-
-  anomaly_thresholds:
-
-    # Alert if more than this % of all orders are in CRITICAL / NEED_ACTION status.
-    # Example: if you have 100 orders and 25 are CRITICAL, this fires.
-    # Adjust up if your operation normally runs hot; adjust down for strict monitoring.
-    critical_orders_pct: 20
-
-    # Alert if more than this % of delayed orders have UNKNOWN_NEEDS_REVIEW reason code.
-    # A high unknown rate usually means your data is missing key fields.
-    unknown_rate_pct: 30
-
-    # Alert if this many new freight holds appear since the last scan.
-    # Set to 1 to be notified of every single new hold.
-    new_freight_holds: 2
-
-    # Alert if this many inventory items hit OUT_OF_STOCK.
-    # Set to 1 to be notified immediately on the first stockout.
-    inventory_stockouts: 1
-
-    # Alert if the same tool is called more than this many times per minute.
-    # Protects against loops. 10 calls/min is generous for normal use.
-    rapid_tool_calls_per_minute: 10
-
-    # --- System anomaly thresholds ---
-    # These trigger alerts when the system itself behaves unusually.
-
-    # Alert if a single tool call uses this many times its rolling average tokens.
-    # Example: if get_delayed_shipments normally uses 500 tokens but suddenly uses
-    # 1,500 tokens (3x), something unusual is in the data — alert fires.
-    token_spike_multiplier: 3
-
-    # Alert if a single tool call takes longer than this (milliseconds).
-    # Duplicates slow_query_threshold_ms — both log independently.
-    slow_tool_call_ms: 500
-
-
-# -----------------------------------------------------------------------------
-# COORDINATOR
-# Controls how the Coordinator Agent routes questions across all 12 agents.
-# The coordinator is the single entry point — it decides which agents to call.
-# -----------------------------------------------------------------------------
 coordinator:
-
-  # Master switch. Set to false to disable the coordinator entirely.
   enabled: true
-
-  # How long (seconds) to wait for any single agent to respond before giving up.
-  # If an agent is down or slow, the coordinator won't hang forever.
   agent_timeout_seconds: 10
-
-  # Maximum number of agents the coordinator will fan out to in a single request.
-  # Prevents one question from triggering all 12 agents simultaneously.
-  # For order-specific questions, usually 3–5 agents are enough.
   max_agents_per_request: 5
-
-  # Whether to ping all agents when the coordinator first starts up.
-  # Recommended: true — tells you immediately if any agent has a problem.
   health_check_on_startup: true
-
-  # How much detail to include in synthesized responses.
-  # "summary"  = key facts only — shorter response, fewer tokens
-  # "detailed" = full data from each agent — longer response, more tokens
-  # Start with "summary". Switch to "detailed" when you need full drill-down.
   synthesis_mode: "summary"
-
-  # Path to the coordinator's own log file.
   coordinator_log_path: "logs/coordinator.log"
 
-
-# -----------------------------------------------------------------------------
-# TESTING
-# Controls the automated test agent — which orders to test, where to save results.
-# The test agent calls every tool across all 12 agents and reports pass/fail.
-# -----------------------------------------------------------------------------
 testing:
-
-  # Master switch. Set to false to disable the test agent.
   enabled: true
-
-  # Sample order numbers to use in test scenarios.
-  # These must exist in your supply_chain.db for tests to pass.
-  # Add more order numbers as your data grows.
   test_orders:
     - "SO10001"
     - "SO10002"
     - "SO10003"
-    - "SO10004"
-    - "SO10005"
-
-  # Sample item numbers to use in inventory test scenarios.
   test_items:
     - "ITEM-001"
     - "ITEM-002"
-    - "ITEM-005"
-    - "ITEM-010"
-
-  # Sample warehouse IDs to use in warehouse test scenarios.
   test_warehouses:
     - "WH-01"
     - "WH-02"
-
-  # Where to save the machine-readable test results (JSON format).
   report_path: "logs/test_results.json"
-
-  # Where to save the human-readable test log.
   log_path: "logs/test_results.log"
-
-  # If true: stop running tests the moment the first failure occurs.
-  # If false: run ALL tests and report all failures at the end.
-  # Recommended: false — see everything that's broken in one run.
   fail_on_error: false
-
-  # Minimum pass rate (%) to consider the test run successful overall.
-  # 90 = if fewer than 90% of tests pass, the overall result is FAIL.
   min_pass_rate_pct: 90
 
-
-# -----------------------------------------------------------------------------
-# LLM PROVIDERS
-# Controls which AI provider to use and how to fall back when Claude Desktop
-# hits its usage limit.
-#
-# SECURITY: API keys must NEVER appear in this file.
-#           Only the environment variable NAME is stored here.
-#           The actual key lives in Windows environment variables only.
-# -----------------------------------------------------------------------------
 llm_providers:
-
-  # Primary provider — Claude Desktop.
-  # This is your normal way of working. No API key needed here.
   primary:
     name: "claude-desktop"
     enabled: true
 
-  # Fallback provider — OpenRouter.
-  # Used when Claude Desktop hits its monthly usage limit.
-  # Run scripts/fallback_chat.py to use this.
-  #
-  # Setup steps (one time only):
-  #   1. Create account at https://openrouter.ai
-  #   2. Generate an API key
-  #   3. Open Windows System Settings → Advanced → Environment Variables
-  #   4. Add new variable: OPENROUTER_API_KEY = your-key-here
-  #   5. Restart your terminal
-  #   6. Run: python scripts/fallback_chat.py
   fallback:
     name: "openrouter"
-    enabled: true
+    enabled: false
     base_url: "https://openrouter.ai/api/v1"
-
-    # Which model to use on OpenRouter.
-    # "anthropic/claude-sonnet-4-5" gives the same behaviour as Claude Desktop.
-    # Other options: "anthropic/claude-haiku-4-5" (faster, cheaper)
-    model: "anthropic/claude-sonnet-4-5"
-
-    # NAME of the Windows environment variable that holds the API key.
-    # The actual key is NOT here — it is in Windows environment variables.
+    model: "example-model-name"
     api_key_env_var: "OPENROUTER_API_KEY"
-
-    # Maximum tokens per response. 4096 is enough for supply chain queries.
     max_tokens: 4096
-
-    # Temperature controls how creative vs deterministic responses are.
-    # 0.1 = highly deterministic — correct for supply chain business logic.
-    # Do not set above 0.3 for this project.
     temperature: 0.1
-    free_model: "google/gemma-4-31b-it:free"
-    paid_model: "mistralai/mistral-7b-instruct"
-    balance_alert_threshold: 5.00
-    balance_check_interval_hours: 24
-    site_url: "http://localhost"
-    site_name: "Supply Chain Control Tower"
 
-    # Ordered list of free models to try when primary free model fails.
-    # The fallback chat tries each one in order until one responds.
-    free_model_chain:
-      - "google/gemma-4-31b-it:free"
-      - "meta-llama/llama-3.3-70b-instruct:free"
-      - "nousresearch/hermes-3-llama-3.1-405b:free"
-      - "qwen/qwen3-coder:free"
-
-  # Whether to switch to fallback automatically when primary hits a limit.
-  # false = you manually run fallback_chat.py when needed (safer, recommended)
-  # true  = system attempts to switch automatically (more complex, use later)
   auto_fallback: false
 
-
-# -----------------------------------------------------------------------------
-# AGENTS
-# Feature flags to enable or disable individual agents.
-# Useful during development — disable agents that aren't ready yet.
-# All true in production.
-# -----------------------------------------------------------------------------
 agents:
   shipping_delay_agent: true
   inventory_agent: true
@@ -395,59 +97,13 @@ agents:
   recommendation_agent: true
   ci_agent: true
   memory_agent: true
-  performance_agent: true    # building now — set false until Step F is complete
-  coordinator_agent: true    # building now — set false until Step G is complete
-  test_agent: true           # building now — set false until Step H is complete
+  performance_agent: true
+  coordinator_agent: true
+  test_agent: true
 
-
-# -----------------------------------------------------------------------------
-# LOGGING
-# Controls log file behaviour across the whole project.
-# -----------------------------------------------------------------------------
 logging:
-
-  # Logging level. Options: DEBUG, INFO, WARNING, ERROR
-  # INFO is right for normal use. DEBUG gives very verbose output for troubleshooting.
   level: "INFO"
-
-  # Whether to also print log output to the terminal (console).
-  # Useful when running scripts manually. Set false for background scheduler.
   console_output: true
-
-  # Whether to rotate log files when they exceed max_bytes.
-  # Prevents logs from filling up your disk over time.
   rotate_logs: true
-
-  # Maximum size (bytes) before a log file is rotated. 1048576 = 1 MB.
   max_bytes: 1048576
-
-  # How many rotated backup files to keep before deleting old ones.
   backup_count: 5
-
-
-# -----------------------------------------------------------------------------
-# DOCKER (future use — Phase 2)
-# These settings are placeholders for when the project is containerised.
-# Do not use these yet. They are here so Phase 2 containerisation only
-# needs to update values, not add new structure.
-# -----------------------------------------------------------------------------
-docker:
-  enabled: false
-  registry: ""                    # e.g. ghcr.io/vishal2559 when publishing
-  image_tag: "latest"
-  api_port: 8000
-  dashboard_port: 8502
-
-
-# -----------------------------------------------------------------------------
-# DATABASE CLOUD (future use — Phase 2/3)
-# Placeholder for PostgreSQL migration.
-# Currently using SQLite (see database.path above).
-# When Phase 2 arrives, set engine to "postgresql" and populate url.
-# -----------------------------------------------------------------------------
-database_cloud:
-  enabled: false
-  engine: "sqlite"               # change to "postgresql" in Phase 2
-  url_env_var: "DATABASE_URL"    # name of env var holding the connection string
-  pool_size: 10
-  max_overflow: 20
