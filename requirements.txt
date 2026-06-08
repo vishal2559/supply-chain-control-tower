@@ -1,43 +1,26 @@
-# requirements.txt
-
 # Supply Chain Control Tower — Python Dependencies
-
-# Install with:
-
-# pip install -r requirements.txt
+# Install with: pip install -r requirements.txt
 
 # MCP Framework
-
 # Used to expose Python functions as Claude Desktop tools.
-
 mcp
 
 # Scheduler
-
 # Used for scheduled/background jobs such as daily scans or reports.
-
 apscheduler
 
 # Configuration
-
 # pyyaml reads config/settings.yaml.
-
 # python-dotenv reads local .env values such as optional API keys.
-
 pyyaml
 python-dotenv
 
 # Dashboard and Charts
-
 # Streamlit runs the dashboard.
-
 # Plotly creates interactive charts.
-
 streamlit
 plotly
 
 # HTTP/API Support
-
 # Used by optional fallback or external API utility scripts.
-
 requests
