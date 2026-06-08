@@ -306,8 +306,3 @@ License: MIT
 
 ---
 
-## ROADMAP
-
-Phase 2 — Docker containerisation (docker-compose, PostgreSQL, FastAPI)
-Phase 3 — Cloud deployment (AWS/GCP, Kubernetes, Redis, CI/CD)
-Phase 4 — SaaS product (multi-tenancy, Stripe billing, ERP connectors)
