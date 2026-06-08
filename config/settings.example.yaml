@@ -6,7 +6,6 @@
 
 # =============================================================================
 
-#
 
 # HOW TO USE THIS FILE:
 
@@ -14,11 +13,9 @@
 
 # Keep it in the same config/ folder.
 
-#
 
 # 2. Update values locally as needed.
 
-#
 
 # 3. Do not commit your real settings.yaml to GitHub.
 
@@ -26,13 +23,11 @@
 
 # machine-specific values, or environment-specific configuration.
 
-#
 
 # Example:
 
 # cp config/settings.example.yaml config/settings.yaml
 
-#
 
 # SECURITY:
 
@@ -40,7 +35,6 @@
 
 # private project notes, or local machine secrets in this file.
 
-#
 
 # Store secrets in environment variables or a local .env file.
 
@@ -49,36 +43,21 @@
 # ── DATABASE ─────────────────────────────────────────────────────
 
 database:
-
-# Public demo database path.
-
-# Replace locally if your database uses a different file name or location.
-
-#
-
-# Recommended public/demo value:
-
-# data/sample_supply_chain.db
-
-#
-
-# Local example:
-
-# data/supply_chain.db
-
-#
-
-# Windows absolute path example:
-
-# C:\Users\YourName\Documents\supply-chain-control-tower\data\supply_chain.db
-
-#
-
-# Mac/Linux absolute path example:
-
-# /home/yourname/supply-chain-control-tower/data/supply_chain.db
-
-path: "data/sample_supply_chain.db"
+  # Public demo database path.
+  # Replace locally if your database uses a different file name or location.
+  #
+  # Recommended public/demo value:
+  #   data/sample_supply_chain.db
+  #
+  # Local example:
+  #   data/supply_chain.db
+  #
+  # Windows absolute path example:
+  #   C:\\Users\\YourName\\Documents\\supply-chain-control-tower\\data\\supply_chain.db
+  #
+  # Mac/Linux absolute path example:
+  #   /home/yourname/supply-chain-control-tower/data/supply_chain.db
+  path: "data/sample_supply_chain.db"
 
 # Set to true after running the index setup script.
 
@@ -98,7 +77,6 @@ delayed_days: 1
 need_action_days: 5
 
 # ── PERFORMANCE ──────────────────────────────────────────────────
-
 performance:
 cache_enabled: true
 cache_ttl_seconds: 300
