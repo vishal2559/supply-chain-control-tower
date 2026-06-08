@@ -297,9 +297,9 @@ python scripts/fallback_chat.py
 
 ## Roadmap
 
-- **Phase 2 — Deployment Ready:** Containerized, scalable, and easier to run.
-- **Phase 3 — Production Ready:** Cloud-ready with CI/CD, caching, monitoring, and performance optimization.
-- **Phase 4 — Enterprise Ready:** Secure, tenant-aware, integration-ready, and governance-focused.
+- **Phase 2 — Deployment Ready:** Containerized setup and easier local deployment.
+- **Phase 3 — Production Ready:** Cloud-ready patterns, CI/CD, monitoring, and performance optimization.
+- **Phase 4 — Enterprise Ready:** Tenant-aware architecture, integration readiness, security hardening, and governance.
 
 ---
 
