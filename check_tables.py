@@ -1,8 +1,11 @@
 from pathlib import Path
 import sqlite3
 
+# Path to the local demo SQLite database.
 DB_PATH = Path("data/supply_chain.db")
 
+# Check if the database file exists before connecting.
+# This prevents SQLite from silently creating a new empty database.
 if not DB_PATH.exists():
     print(f"Database file not found: {DB_PATH}")
     print("Run the database setup scripts before using CI features.")
