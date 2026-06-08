@@ -203,7 +203,7 @@ The project includes automated test scenarios across the agent ecosystem to vali
 ```
 supply_chain_mcp_project/
 │
-├── config/        # Centralized settings
+├── config/        # Centralized settings and public example configuration
 ├── data/          # SQLite database and sample data
 ├── docs/          # Installation and upgrade documentation
 ├── logs/          # Runtime logs and audit outputs
@@ -230,7 +230,6 @@ supply_chain_mcp_project/
 - Git
 
 ### Installation
-
 ```bash
 # Clone the repository
 git clone https://github.com/vishal2559/supply-chain-control-tower.git
@@ -247,6 +246,13 @@ python scripts/build_indexes.py
 For Claude Desktop setup, see: `docs/INSTALLATION_GUIDE.md`
 
 ---
+
+### Configuration
+
+This repository includes a public-safe example configuration:
+
+```bash
+cp config/settings.example.yaml config/settings.yaml
 
 ## Optional Fallback Setup
 
@@ -303,7 +309,7 @@ This repository is intended for learning, portfolio, open technical contribution
 
 It demonstrates the architecture, agent collaboration pattern, and supply chain use case using sample data and configurable rules.
 
-Additional research, architecture experiments, and enterprise-focused enhancements are maintained separately from this public demo version.
+Additional research and architecture experiments are maintained separately from this public demo version.
 
 ---
 
