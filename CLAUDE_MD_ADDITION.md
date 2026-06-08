@@ -6,7 +6,7 @@ When available, Claude may use memory tools to:
 
 - Understand the current demo project state
 - Summarize completed work
-- Track high-level decisions
+- Track high-level technical decisions
 - Record session outcomes
 - Support continuity between development sessions
 
