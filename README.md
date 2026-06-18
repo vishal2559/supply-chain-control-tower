@@ -315,7 +315,7 @@ Additional research and architecture experiments are maintained separately from 
 
 ## Author
 
-**Vishal** — AI Engineer | Supply Chain AI | Multi-Agent Systems
+**Vishal Vishwakarma** — AI Engineer | Supply Chain AI | Multi-Agent Systems
 
 GitHub: [github.com/vishal2559](https://github.com/vishal2559)
 
