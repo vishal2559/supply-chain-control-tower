@@ -291,15 +291,8 @@ python scripts/fallback_chat.py
 | v1.5 | Purchase order, freight, and warehouse coverage |
 | v2.0 | Investigation, recommendation, and improvement capabilities |
 | v2.5 | SQLite upgrade and Streamlit dashboard |
-| v3.0 | Standardized configuration, security layer, caching, performance monitoring, coordinator, testing, and optional fallback support |
+| v3.0 | Additional research and architecture experiments are maintained separately" — EXPOSE RISK
 
----
-
-## Roadmap
-
-- **Phase 2 — Deployment Ready:** Containerized setup and easier local deployment.
-- **Phase 3 — Production Ready:** Cloud-ready patterns, CI/CD, monitoring, and performance optimization.
-- **Phase 4 — Enterprise Ready:** Tenant-aware architecture, integration readiness, security hardening, and governance.
 
 ---
 
