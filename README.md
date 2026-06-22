@@ -291,7 +291,7 @@ python scripts/fallback_chat.py
 | v1.5 | Purchase order, freight, and warehouse coverage |
 | v2.0 | Investigation, recommendation, and improvement capabilities |
 | v2.5 | SQLite upgrade and Streamlit dashboard |
-| v3.0 | Additional research and architecture experiments are maintained separately" — EXPOSE RISK
+| v3.0 | Standardized configuration, security-aware execution, performance monitoring, coordinator agent, automated testing, and optional LLM fallback support 
 
 
 ---
@@ -301,8 +301,6 @@ python scripts/fallback_chat.py
 This repository is intended for learning, portfolio, open technical contribution, and architecture demonstration purposes.
 
 It demonstrates the architecture, agent collaboration pattern, and supply chain use case using sample data and configurable rules.
-
-Additional research and architecture experiments are maintained separately from this public demo version.
 
 ---
 
